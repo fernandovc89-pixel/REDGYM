@@ -124,14 +124,12 @@ return (
 function LoginScreen({ onLogin, onBack, onSwitch }) {
 const [email, setEmail] = useState(””);
 const [pass, setPass] = useState(””);
-const [role, setRole] = useState(“user”);
 const [error, setError] = useState(””);
 const [loading, setLoading] = useState(false);
 const inp = { background: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: 10, padding: “12px 16px”, color: theme.text, fontSize: 14, outline: “none”, width: “100%”, boxSizing: “border-box” };
 
 const handleLogin = async () => {
 if (!email || !pass) { setError(“Ingresa tu correo y contraseña”); return; }
-if (role === “admin” || role === “gym”) { onLogin(role, null); return; }
 setLoading(true); setError(””);
 const res = await authService.login(email, pass);
 if (res.error) { setError(res.error); setLoading(false); return; }
@@ -146,20 +144,19 @@ return (
 <Logo size={32} />
 <h2 style={{ color: theme.text, fontFamily: “‘Bebas Neue’, cursive”, fontSize: 32, letterSpacing: 2, margin: “16px 0 4px” }}>BIENVENIDO</h2>
 <p style={{ color: theme.muted, fontSize: 14, marginBottom: 28 }}>Ingresa a tu cuenta</p>
-<div style={{ display: “flex”, background: theme.card, borderRadius: 10, padding: 4, marginBottom: 20, border: `1px solid ${theme.cardBorder}` }}>
-{[[“user”, “👤 Usuario”], [“gym”, “🏋️ Gym”], [“admin”, “⚙️ Admin”]].map(([r, label]) => (
-<button key={r} onClick={() => setRole(r)} style={{ flex: 1, padding: “8px 4px”, border: “none”, borderRadius: 8, cursor: “pointer”, background: role === r ? theme.accent : “transparent”, color: role === r ? “#fff” : theme.muted, fontSize: 12, fontWeight: 700 }}>{label}</button>
-))}
+
+```
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Correo electrónico" style={inp} />
+      <input value={pass} onChange={e => setPass(e.target.value)} type="password" placeholder="Contraseña" style={inp} />
+    </div>
+    {error && <p style={{ color: theme.accent, fontSize: 13, margin: "10px 0 0", textAlign: "center" }}>{error}</p>}
+    <Btn onClick={handleLogin} disabled={loading} style={{ width: "100%", padding: "14px", marginTop: 16 }}>{loading ? "Verificando..." : "Entrar"}</Btn>
+    <p style={{ color: theme.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>¿No tienes cuenta? <span style={{ color: theme.accent, cursor: "pointer" }} onClick={onSwitch}>Regístrate</span></p>
+  </div>
 </div>
-<div style={{ display: “flex”, flexDirection: “column”, gap: 12 }}>
-<input value={email} onChange={e => setEmail(e.target.value)} placeholder=“Correo electrónico” style={inp} />
-<input value={pass} onChange={e => setPass(e.target.value)} type=“password” placeholder=“Contraseña” style={inp} />
-</div>
-{error && <p style={{ color: theme.accent, fontSize: 13, margin: “10px 0 0”, textAlign: “center” }}>{error}</p>}
-<Btn onClick={handleLogin} disabled={loading} style={{ width: “100%”, padding: “14px”, marginTop: 16 }}>{loading ? “Verificando…” : “Entrar”}</Btn>
-<p style={{ color: theme.muted, fontSize: 13, textAlign: “center”, marginTop: 20 }}>¿No tienes cuenta? <span style={{ color: theme.accent, cursor: “pointer” }} onClick={onSwitch}>Regístrate</span></p>
-</div>
-</div>
+```
+
 );
 }
 
@@ -911,6 +908,14 @@ const [loading, setLoading] = useState(true);
 const [currentUser, setCurrentUser] = useState(null);
 const nav = (s) => setScreen(s);
 
+// Secret access for admin and gym panels
+const secretRole = (() => {
+const hash = window.location.hash;
+if (hash === “#admin-redgym-2025”) return “admin”;
+if (hash === “#gym-redgym-2025”) return “gym”;
+return null;
+})();
+
 const handleLogin = (role, user) => {
 if (user) setCurrentUser(user);
 setScreen(role === “gym” ? “gym” : role === “admin” ? “admin” : “dashboard”);
@@ -937,6 +942,7 @@ setLoading(false);
 useEffect(() => {
 loadGyms();
 authService.getSession().then(user => { if (user) setCurrentUser(user); });
+if (secretRole) setScreen(secretRole);
 }, []);
 return (
 <>
@@ -957,4 +963,3 @@ return (
 </>
 );
 }
-S
