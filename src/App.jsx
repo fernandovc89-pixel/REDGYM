@@ -660,7 +660,7 @@ return (
 
 function GymDashboard({ onLogout }) {
 const planColor = { “Estándar”: theme.blue, “Premium”: theme.accent };
-const todayVisits = [{ name: “{user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuario"}”, plan: “Estándar”, time: “07:30 AM” }, { name: “María L.”, plan: “Premium”, time: “08:15 AM” }, { name: “Carlos R.”, plan: “Estándar”, time: “09:00 AM” }, { name: “Ana P.”, plan: “Premium”, time: “10:30 AM” }];
+const todayVisits = [{ name: “{user?.name||"Usuario"}”, plan: “Estándar”, time: “07:30 AM” }, { name: “María L.”, plan: “Premium”, time: “08:15 AM” }, { name: “Carlos R.”, plan: “Estándar”, time: “09:00 AM” }, { name: “Ana P.”, plan: “Premium”, time: “10:30 AM” }];
 return (
 <div style={{ minHeight: “100vh”, background: theme.bg, paddingBottom: 30 }}>
 <div style={{ padding: “20px 20px 0”, display: “flex”, justifyContent: “space-between”, alignItems: “center” }}>
