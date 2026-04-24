@@ -90,7 +90,7 @@ return <div onClick={onClick} style={{ background: theme.card, border: `1px soli
 function BottomNav({ active, onNavigate }) {
 return (
 <div style={{ position: “fixed”, bottom: 0, left: 0, right: 0, background: theme.card, borderTop: `1px solid ${theme.cardBorder}`, display: “flex”, padding: “10px 0 16px” }}>
-{[{ icon: “🏠”, label: “Inicio”, id: “dashboard” }, { icon: “🏋️”, label: “Gyms”, id: “gyms” }, { icon: “📱”, label: “Check-in”, id: “checkin” }, { icon: “📊”, label: “Historial”, id: “history” }, { icon: “👤”, label: “Perfil”, id: “profile” }].map(n => (
+{[{ icon: “”, label: “Inicio”, id: “dashboard” }, { icon: “️”, label: “Gyms”, id: “gyms” }, { icon: “”, label: “Check-in”, id: “checkin” }, { icon: “”, label: “Historial”, id: “history” }, { icon: “”, label: “Perfil”, id: “profile” }].map(n => (
 <div key={n.id} onClick={() => onNavigate(n.id)} style={{ flex: 1, display: “flex”, flexDirection: “column”, alignItems: “center”, gap: 4, cursor: “pointer” }}>
 <span style={{ fontSize: 20 }}>{n.icon}</span>
 <span style={{ fontSize: 10, color: active === n.id ? theme.accent : theme.muted, fontWeight: active === n.id ? 700 : 400 }}>{n.label}</span>
@@ -238,7 +238,7 @@ return (
 </div>
 <div style={{ padding: “20px 20px 0” }}>
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Hola de nuevo,</p>
-<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: “2px 0 20px” }}>{user?.user_metadata?.name || user?.email?.split(”@”)[0] || “Usuario”} 👋</h2>
+<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: “2px 0 20px” }}>{user?.user_metadata?.name || user?.email?.split(”@”)[0] || “Usuario”} </h2>
 <Card style={{ background: `linear-gradient(135deg, #1a0a0c, #1e0e10)`, border: `1px solid ${theme.accent}33`, marginBottom: 16 }}>
 <div style={{ display: “flex”, justifyContent: “space-between”, alignItems: “flex-start”, marginBottom: 16 }}>
 <div><Badge color={plan.color}>Plan {plan.name}</Badge><p style={{ color: theme.muted, fontSize: 12, margin: “8px 0 0” }}>Vence el 31 de julio</p></div>
@@ -255,12 +255,12 @@ return (
 </Card>
 <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr”, gap: 12, marginBottom: 20 }}>
 <Card style={{ textAlign: “center”, cursor: “pointer”, padding: 16 }} onClick={() => onNavigate(“checkin”)}>
-<div style={{ fontSize: 28, marginBottom: 8 }}>📱</div>
+<div style={{ fontSize: 28, marginBottom: 8 }}></div>
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: 0 }}>Check-in QR</p>
 <p style={{ color: theme.muted, fontSize: 11, margin: “4px 0 0” }}>Escanear gym</p>
 </Card>
 <Card style={{ textAlign: “center”, cursor: “pointer”, padding: 16 }} onClick={() => onNavigate(“gyms”)}>
-<div style={{ fontSize: 28, marginBottom: 8 }}>🏋️</div>
+<div style={{ fontSize: 28, marginBottom: 8 }}>️</div>
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: 0 }}>Mis Gyms</p>
 <p style={{ color: theme.muted, fontSize: 11, margin: “4px 0 0” }}>Ver red disponible</p>
 </Card>
@@ -310,7 +310,7 @@ return (
 <div onClick={handleScan} style={{ width: 220, height: 220, border: `2px solid ${scanning ? theme.accent : theme.cardBorder}`, borderRadius: 20, display: “flex”, alignItems: “center”, justifyContent: “center”, cursor: “pointer”, position: “relative”, background: theme.card, boxShadow: scanning ? `0 0 30px ${theme.accentGlow}` : “none” }}>
 {corners.map((s, i) => <div key={i} style={{ position: “absolute”, width: 24, height: 24, borderRadius: 4, …s }} />)}
 <div style={{ textAlign: “center” }}>
-<div style={{ fontSize: 40, marginBottom: 8 }}>{scanning ? “⏳” : “📷”}</div>
+<div style={{ fontSize: 40, marginBottom: 8 }}>{scanning ? “⏳” : “”}</div>
 <p style={{ color: theme.muted, fontSize: 12, margin: 0 }}>{scanning ? “Verificando…” : “Toca para simular”}</p>
 </div>
 </div>
@@ -378,7 +378,7 @@ return (
 <button onClick={() => onNavigate(“dashboard”)} style={{ background: “none”, border: “none”, color: theme.muted, cursor: “pointer”, fontSize: 22 }}>←</button>
 <h2 style={{ color: theme.text, fontFamily: “‘Bebas Neue’, cursive”, fontSize: 26, letterSpacing: 2, margin: 0, flex: 1 }}>RED DE GIMNASIOS</h2>
 <div style={{ display: “flex”, background: theme.card, borderRadius: 8, padding: 3, border: `1px solid ${theme.cardBorder}` }}>
-{[{ id: “map”, icon: “🗺️” }, { id: “list”, icon: “☰” }].map(t => (
+{[{ id: “map”, icon: “️” }, { id: “list”, icon: “☰” }].map(t => (
 <button key={t.id} onClick={() => setView(t.id)} style={{ padding: “6px 12px”, border: “none”, borderRadius: 6, cursor: “pointer”, background: view === t.id ? theme.accent : “transparent”, color: view === t.id ? “#fff” : theme.muted, fontSize: 14 }}>{t.icon}</button>
 ))}
 </div>
@@ -388,13 +388,13 @@ return (
   {/* GPS status */}
   <div style={{ padding: "0 20px 8px" }}>
     <Badge color={userLoc ? theme.green : theme.muted}>
-      {userLoc ? "📍 Ubicación activa — distancias reales" : "📍 Activa tu GPS para ver distancias"}
+      {userLoc ? " Ubicación activa — distancias reales" : " Activa tu GPS para ver distancias"}
     </Badge>
   </div>
 
   {/* Search */}
   <div style={{ padding: "0 20px 12px" }}>
-    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Buscar gimnasio..."
+    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="  Buscar gimnasio..."
       style={{ width: "100%", background: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: 10, padding: "11px 16px", color: theme.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
   </div>
 
@@ -436,7 +436,7 @@ return (
               <g key={g.id} onClick={() => setSelected(selected === g.id ? null : g.id)} style={{ cursor: "pointer" }}>
                 <circle cx={cx} cy={cy} r={isSel ? 22 : 18} fill={col + "33"}/>
                 <circle cx={cx} cy={cy} r={isSel ? 16 : 13} fill={col} stroke={isSel ? "#fff" : col} strokeWidth={isSel ? 2 : 0}/>
-                <text x={cx} y={cy+5} textAnchor="middle" fontSize="13">🏋️</text>
+                <text x={cx} y={cy+5} textAnchor="middle" fontSize="13">️</text>
                 <rect x={cx-28} y={cy-36} width="56" height="18" rx="9" fill="#000000cc"/>
                 <text x={cx} y={cy-24} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="bold">
                   {g.name.length > 12 ? g.name.slice(0,12)+"…" : g.name}
@@ -465,23 +465,23 @@ return (
         <div style={{ margin: "12px 20px 0" }}>
           <Card style={{ border: `1px solid ${selectedGym.color || theme.accent}44`, background: (selectedGym.color || theme.accent) + "10" }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: (selectedGym.color || theme.accent) + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏋️</div>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: (selectedGym.color || theme.accent) + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>️</div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{selectedGym.name}</p>
                   <Badge color={theme.gold}>⭐ {selectedGym.rating}</Badge>
                 </div>
-                <p style={{ color: theme.muted, fontSize: 12, margin: "4px 0 2px" }}>📍 {selectedGym.address}</p>
-                {selectedGym.hours && <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 8px" }}>🕐 {selectedGym.hours}</p>}
+                <p style={{ color: theme.muted, fontSize: 12, margin: "4px 0 2px" }}> {selectedGym.address}</p>
+                {selectedGym.hours && <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 8px" }}> {selectedGym.hours}</p>}
                 <div style={{ display: "flex", gap: 8 }}>
                   <Badge color={theme.green}>✓ Disponible</Badge>
-                  {selectedGym.distance !== "—" && <Badge color={selectedGym.color || theme.accent}>📏 {selectedGym.distance}</Badge>}
+                  {selectedGym.distance !== "—" && <Badge color={selectedGym.color || theme.accent}> {selectedGym.distance}</Badge>}
                 </div>
               </div>
             </div>
             <button onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedGym.name + " " + selectedGym.address)}`, "_blank")}
               style={{ width: "100%", marginTop: 12, padding: "10px", background: (selectedGym.color || theme.accent) + "22", border: `1px solid ${(selectedGym.color || theme.accent)}44`, borderRadius: 8, color: selectedGym.color || theme.accent, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              📍 Abrir en Google Maps →
+               Abrir en Google Maps →
             </button>
           </Card>
         </div>
@@ -498,7 +498,7 @@ return (
               <div style={{ flex: 1 }}>
                 <p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{g.name}</p>
                 <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0 0" }}>
-                  {g.distance !== "—" ? `📏 ${g.distance} · ` : ""}⭐ {g.rating}
+                  {g.distance !== "—" ? ` ${g.distance} · ` : ""}⭐ {g.rating}
                 </p>
               </div>
               <Badge color={theme.green}>Abierto</Badge>
@@ -512,14 +512,14 @@ return (
       {filtered.map(g => (
         <Card key={g.id} style={{ padding: 16, marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: (g.color || theme.accent) + "22", border: `1px solid ${(g.color || theme.accent)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🏋️</div>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: (g.color || theme.accent) + "22", border: `1px solid ${(g.color || theme.accent)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>️</div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{g.name}</p>
                 <Badge color={theme.gold}>⭐ {g.rating}</Badge>
               </div>
-              <p style={{ color: theme.muted, fontSize: 12, margin: "4px 0 2px" }}>📍 {g.address}</p>
-              {g.hours && <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 8px" }}>🕐 {g.hours} {g.distance !== "—" ? `· 📏 ${g.distance}` : ""}</p>}
+              <p style={{ color: theme.muted, fontSize: 12, margin: "4px 0 2px" }}> {g.address}</p>
+              {g.hours && <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 8px" }}> {g.hours} {g.distance !== "—" ? `·  ${g.distance}` : ""}</p>}
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <Badge color={theme.green}>Disponible</Badge>
                 <span onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.name + " " + g.address)}`, "_blank")}
@@ -549,7 +549,7 @@ return (
 <h2 style={{ color: theme.text, fontFamily: “‘Bebas Neue’, cursive”, fontSize: 28, letterSpacing: 2, margin: “16px 0 4px” }}>MI HISTORIAL</h2>
 <p style={{ color: theme.muted, fontSize: 13, marginBottom: 20 }}>Todas tus visitas registradas</p>
 <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr 1fr”, gap: 10, marginBottom: 20 }}>
-{[{ label: “Este mes”, value: “6”, icon: “📅”, color: theme.blue }, { label: “Total”, value: “8”, icon: “🏋️”, color: theme.green }, { label: “Favorito”, value: topGym[0].split(” “)[0], icon: “⭐”, color: theme.gold }].map((s, i) => (
+{[{ label: “Este mes”, value: “6”, icon: “”, color: theme.blue }, { label: “Total”, value: “8”, icon: “️”, color: theme.green }, { label: “Favorito”, value: topGym[0].split(” “)[0], icon: “⭐”, color: theme.gold }].map((s, i) => (
 <Card key={i} style={{ padding: 12, textAlign: “center” }}>
 <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: i === 2 ? 11 : 20, margin: 0 }}>{s.value}</p>
@@ -624,10 +624,10 @@ return (
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: “0 0 12px” }}>Configuración</p>
 <Card style={{ marginBottom: 16 }}>
 {[
-{ icon: “🔔”, label: “Notificaciones”, sub: “Recordatorios y alertas”, action: <div onClick={() => setNotif(!notif)} style={{ width: 44, height: 24, borderRadius: 12, cursor: “pointer”, background: notif ? theme.accent : theme.cardBorder, position: “relative” }}><div style={{ width: 18, height: 18, borderRadius: “50%”, background: “#fff”, position: “absolute”, top: 3, left: notif ? 23 : 3, transition: “all 0.3s” }} /></div> },
-{ icon: “🔒”, label: “Cambiar contraseña”, sub: “Actualiza tu acceso”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
-{ icon: “💳”, label: “Método de pago”, sub: “MercadoPago vinculado”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
-{ icon: “📄”, label: “Términos y privacidad”, sub: “Políticas de uso”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
+{ icon: “”, label: “Notificaciones”, sub: “Recordatorios y alertas”, action: <div onClick={() => setNotif(!notif)} style={{ width: 44, height: 24, borderRadius: 12, cursor: “pointer”, background: notif ? theme.accent : theme.cardBorder, position: “relative” }}><div style={{ width: 18, height: 18, borderRadius: “50%”, background: “#fff”, position: “absolute”, top: 3, left: notif ? 23 : 3, transition: “all 0.3s” }} /></div> },
+{ icon: “”, label: “Cambiar contraseña”, sub: “Actualiza tu acceso”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
+{ icon: “”, label: “Método de pago”, sub: “MercadoPago vinculado”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
+{ icon: “”, label: “Términos y privacidad”, sub: “Políticas de uso”, action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
 ].map((item, i, arr) => (
 <div key={i} style={{ display: “flex”, alignItems: “center”, justifyContent: “space-between”, padding: “12px 0”, borderBottom: i < arr.length - 1 ? `1px solid ${theme.cardBorder}` : “none” }}>
 <div style={{ display: “flex”, alignItems: “center”, gap: 12 }}>
@@ -643,7 +643,7 @@ return (
 </Card>
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: “0 0 12px” }}>Mi actividad</p>
 <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr”, gap: 10, marginBottom: 20 }}>
-{[{ label: “Visitas totales”, value: “8”, icon: “🏋️”, color: theme.green }, { label: “Gyms visitados”, value: “3”, icon: “📍”, color: theme.blue }, { label: “Meses activo”, value: “1”, icon: “📅”, color: theme.gold }, { label: “Visitas este mes”, value: “5/12”, icon: “📊”, color: theme.accent }].map((s, i) => (
+{[{ label: “Visitas totales”, value: “8”, icon: “️”, color: theme.green }, { label: “Gyms visitados”, value: “3”, icon: “”, color: theme.blue }, { label: “Meses activo”, value: “1”, icon: “”, color: theme.gold }, { label: “Visitas este mes”, value: “5/12”, icon: “”, color: theme.accent }].map((s, i) => (
 <Card key={i} style={{ padding: 14 }}>
 <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
@@ -669,9 +669,9 @@ return (
 </div>
 <div style={{ padding: “20px 20px 0” }}>
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Panel de</p>
-<h2 style={{ color: theme.text, fontSize: 20, fontWeight: 800, margin: “2px 0 20px” }}>PowerGym Chalco 🏋️</h2>
+<h2 style={{ color: theme.text, fontSize: 20, fontWeight: 800, margin: “2px 0 20px” }}>PowerGym Chalco ️</h2>
 <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr”, gap: 12, marginBottom: 20 }}>
-{[{ label: “Visitas hoy”, value: “4”, icon: “👥”, color: theme.blue }, { label: “Ingresos hoy”, value: “$236”, icon: “💰”, color: theme.green }, { label: “Este mes”, value: “47 visitas”, icon: “📅”, color: theme.gold }, { label: “Mes actual”, value: “$2,773”, icon: “📈”, color: theme.accent }].map((s, i) => (
+{[{ label: “Visitas hoy”, value: “4”, icon: “”, color: theme.blue }, { label: “Ingresos hoy”, value: “$236”, icon: “”, color: theme.green }, { label: “Este mes”, value: “47 visitas”, icon: “”, color: theme.gold }, { label: “Mes actual”, value: “$2,773”, icon: “”, color: theme.accent }].map((s, i) => (
 <Card key={i} style={{ padding: 14 }}>
 <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
@@ -775,7 +775,7 @@ return (
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Panel de</p>
 <h2 style={{ color: theme.text, fontSize: 20, fontWeight: 800, margin: “2px 0 16px” }}>Administrador ⚙️</h2>
 <div style={{ display: “flex”, background: theme.card, borderRadius: 10, padding: 4, marginBottom: 20, border: `1px solid ${theme.cardBorder}`, gap: 4 }}>
-{[{ id: “overview”, label: “Resumen”, icon: “📊” }, { id: “gyms”, label: “Gyms”, icon: “🏋️” }, { id: “requests”, label: requests.length > 0 ? “Solicitudes (” + requests.length + “)” : “Solicitudes”, icon: “📋” }].map(t => (
+{[{ id: “overview”, label: “Resumen”, icon: “” }, { id: “gyms”, label: “Gyms”, icon: “️” }, { id: “requests”, label: requests.length > 0 ? “Solicitudes (” + requests.length + “)” : “Solicitudes”, icon: “” }].map(t => (
 <button key={t.id} onClick={() => setAdminTab(t.id)} style={{ flex: 1, padding: “8px 4px”, border: “none”, borderRadius: 8, cursor: “pointer”, background: adminTab === t.id ? theme.accent : “transparent”, color: adminTab === t.id ? “#fff” : theme.muted, fontSize: 11, fontWeight: 700 }}>{t.icon} {t.label}</button>
 ))}
 </div>
@@ -784,7 +784,7 @@ return (
     {adminTab === "overview" && (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-          {[{ label: "Usuarios activos", value: "128", icon: "👥", color: theme.blue }, { label: "Gyms en la red", value: String(savedGyms.filter(g => g.status === "active").length), icon: "🏋️", color: theme.green }, { label: "Visitas este mes", value: "1,247", icon: "📅", color: theme.gold }, { label: "Ingresos app (15%)", value: "$19,440", icon: "💰", color: theme.accent }].map((s, i) => (
+          {[{ label: "Usuarios activos", value: "128", icon: "", color: theme.blue }, { label: "Gyms en la red", value: String(savedGyms.filter(g => g.status === "active").length), icon: "️", color: theme.green }, { label: "Visitas este mes", value: "1,247", icon: "", color: theme.gold }, { label: "Ingresos app (15%)", value: "$19,440", icon: "", color: theme.accent }].map((s, i) => (
             <Card key={i} style={{ padding: 14 }}>
               <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
               <p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
@@ -824,7 +824,7 @@ return (
               <div>
                 <input value={gymForm.coords} onChange={e => setGymForm({ ...gymForm, coords: e.target.value })} placeholder="Coordenadas (ej. 19.2680, -98.9650)" style={inp} />
                 <p style={{ color: theme.muted, fontSize: 11, margin: "6px 0 0", lineHeight: 1.5 }}>
-                  📍 Para obtener coordenadas: abre Google Maps → mantén presionado el lugar → copia los números que aparecen (ej. 19.2680, -98.9650)
+                   Para obtener coordenadas: abre Google Maps → mantén presionado el lugar → copia los números que aparecen (ej. 19.2680, -98.9650)
                 </p>
               </div>
               <Btn onClick={handleAddGym} disabled={!gymForm.name || !gymForm.address} style={{ padding: "12px" }}>✓ Guardar Gimnasio</Btn>
@@ -837,23 +837,23 @@ return (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
               <div style={{ flex: 1 }}>
                 <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{g.name}</p>
-                <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 2px" }}>📍 {g.address}</p>
-                {g.phone && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>📞 {g.phone}</p>}
-                {g.hours && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>🕐 {g.hours}</p>}
+                <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 2px" }}> {g.address}</p>
+                {g.phone && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}> {g.phone}</p>}
+                {g.hours && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}> {g.hours}</p>}
               </div>
               <Badge color={g.status === "active" ? theme.green : theme.muted}>{g.status === "active" ? "Activo" : "Inactivo"}</Badge>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${theme.cardBorder}` }}>
-              <span style={{ color: theme.muted, fontSize: 12 }}>📊 {g.visits} visitas este mes</span>
+              <span style={{ color: theme.muted, fontSize: 12 }}> {g.visits} visitas este mes</span>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => handleToggle(g.id)} style={{ padding: "5px 12px", border: `1px solid ${g.status === "active" ? theme.accent + "55" : theme.green + "55"}`, borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: g.status === "active" ? theme.accent : theme.green }}>{g.status === "active" ? "Desactivar" : "Activar"}</button>
                 {confirmDelete === g.id ? (
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={async () => { await gymService.delete(g.id); const updated = savedGyms.filter(x => x.id !== g.id); setSavedGyms(updated); db.save("redgym-gimnasios", updated); setConfirmDelete(null); showToast("🗑 Gimnasio eliminado", theme.accent); }} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: "#ff444422", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>✓ Sí</button>
+                    <button onClick={async () => { await gymService.delete(g.id); const updated = savedGyms.filter(x => x.id !== g.id); setSavedGyms(updated); db.save("redgym-gimnasios", updated); setConfirmDelete(null); showToast(" Gimnasio eliminado", theme.accent); }} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: "#ff444422", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>✓ Sí</button>
                     <button onClick={() => setConfirmDelete(null)} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: theme.cardBorder, cursor: "pointer", fontSize: 11, fontWeight: 700, color: theme.muted }}>No</button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmDelete(g.id)} style={{ padding: "5px 12px", border: "1px solid #ff444433", borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>🗑 Borrar</button>
+                  <button onClick={() => setConfirmDelete(g.id)} style={{ padding: "5px 12px", border: "1px solid #ff444433", borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}> Borrar</button>
                 )}
               </div>
             </div>
@@ -877,10 +877,10 @@ return (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
                   <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{r.name}</p>
-                  <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 1px" }}>📍 {r.address}</p>
-                  <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>📞 {r.phone}</p>
+                  <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 1px" }}> {r.address}</p>
+                  <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}> {r.phone}</p>
                   <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>✉️ {r.email}</p>
-                  <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>🕐 {r.hours}</p>
+                  <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}> {r.hours}</p>
                 </div>
                 <Badge color={theme.gold}>Pendiente</Badge>
               </div>
