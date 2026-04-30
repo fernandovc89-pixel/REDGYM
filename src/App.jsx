@@ -540,7 +540,7 @@ return (
 
 function HistoryScreen({ onNavigate }) {
 const gymCount = mockVisits.reduce((acc, v) => { acc[v.gym] = (acc[v.gym] || 0) + 1; return acc; }, {});
-const topGym = Object.entries(gymCount).sort((a, b) => b[1] - a[1])[0];
+const topGym = Object.entries(gymCount).sort((a, b) => b[1] - a[1])[0] || ["Sin visitas", 0];
 const barColors = [theme.blue, theme.green, theme.gold];
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, paddingBottom: 90 }}>
@@ -549,7 +549,7 @@ return (
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "16px 0 4px" }}>MI HISTORIAL</h2>
 <p style={{ color: theme.muted, fontSize: 13, marginBottom: 20 }}>Todas tus visitas registradas</p>
 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-{[{ label: "Este mes", value: "6", icon: "cal", color: theme.blue }, { label: "Total", value: "8", icon: "gym️", color: theme.green }, { label: "Favorito", value: topGym[0].split(" ")[0], icon: "star", color: theme.gold }].map((s, i) => (
+{[{ label: "Este mes", value: String(mockVisits.filter(v => new Date(v.date).getMonth() === new Date().getMonth()).length), icon: "cal", color: theme.blue }, { label: "Total", value: String(mockVisits.length), icon: "gym️", color: theme.green }, { label: "Favorito", value: topGym[0].split(" ")[0], icon: "star", color: theme.gold }].map((s, i) => (
 <Card key={i} style={{ padding: 12, textAlign: "center" }}>
 <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: i === 2 ? 11 : 20, margin: 0 }}>{s.value}</p>
