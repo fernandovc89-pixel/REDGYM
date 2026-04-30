@@ -29,7 +29,7 @@ perks: ["12 visitas/mes", "Acceso a todos los gyms", "Check-in por QR", "Histori
 perks: ["20 visitas/mes", "Acceso a todos los gyms", "Check-in por QR", "Historial de visitas", "Prioridad en horarios pico", "Clases premium incluidas", "Asesoría personalizada", "Visita extra: $60 c/u"] },
 ];
 
-const mockVisits = [
+const mockVisits = []; const mockVisitsOld = [
 { date: "12 Jul 2025", gym: "PowerGym Chalco", time: "07:30 AM", plan: "Estándar" },
 { date: "10 Jul 2025", gym: "FitZone Valle", time: "06:15 PM", plan: "Estándar" },
 { date: "08 Jul 2025", gym: "PowerGym Chalco", time: "08:00 AM", plan: "Estándar" },
@@ -228,7 +228,7 @@ return (
 
 function UserDashboard({ onNavigate, onLogout, user }) {
 const plan = plans[0];
-const usedVisits = 5;
+const usedVisits = 0;
 const pct = (usedVisits / plan.visits) * 100;
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, paddingBottom: 80 }}>
@@ -238,7 +238,7 @@ return (
 </div>
 <div style={{ padding: "20px 20px 0" }}>
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Hola de nuevo,</p>
-<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "2px 0 20px" }}>{user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuario"} wave</h2>
+<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "2px 0 20px" }}>{user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuario"}</h2>
 <Card style={{ background: `linear-gradient(135deg, #1a0a0c, #1e0e10)`, border: `1px solid ${theme.accent}33`, marginBottom: 16 }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
 <div><Badge color={plan.color}>Plan {plan.name}</Badge><p style={{ color: theme.muted, fontSize: 12, margin: "8px 0 0" }}>Vence el 31 de julio</p></div>
