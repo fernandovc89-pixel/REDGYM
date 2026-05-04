@@ -288,60 +288,27 @@ return (
 
 function CheckinScreen({ onNavigate }) {
 const [done, setDone] = useState(false);
-const [error, setError] = useState("");
-const [gymName, setGymName] = useState("");
-const videoRef = useRef(null);
-const [stream, setStream] = useState(null);
-
-useEffect(() => {
-  if (!done) startCamera();
-  return () => stopCamera();
-}, [done]);
-
-const startCamera = async () => {
-  try {
-    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    setStream(s);
-    if (videoRef.current) videoRef.current.srcObject = s;
-  } catch(e) {
-    setError("No se pudo acceder a la camara. Permite el acceso en tu navegador.");
-  }
-};
-
-const stopCamera = () => {
-  if (stream) stream.getTracks().forEach(t => t.stop());
-};
-
-const handleCheckin = () => {
-  stopCamera();
-  setGymName("Gym Paraje Altamirano");
-  setDone(true);
-};
-
-const corners = [{ top: 12, left: 12, borderTop: "3px solid " + theme.accent, borderLeft: "3px solid " + theme.accent }, { top: 12, right: 12, borderTop: "3px solid " + theme.accent, borderRight: "3px solid " + theme.accent }, { bottom: 12, left: 12, borderBottom: "3px solid " + theme.accent, borderLeft: "3px solid " + theme.accent }, { bottom: 12, right: 12, borderBottom: "3px solid " + theme.accent, borderRight: "3px solid " + theme.accent }];
+const handleCheckin = () => setDone(true);
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", paddingBottom: 80 }}>
-<button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 22, margin: 24, alignSelf: "flex-start" }}>←</button>
+<button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 22, margin: 24, alignSelf: "flex-start" }}>atras</button>
 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>
 {done ? (
 <>
-<div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: `3px solid ${theme.green}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>✓</div>
-<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>¡CHECK-IN EXITOSO!</h2>
-<p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>{gymName}</p>
-<Badge color={theme.green}>Visita registrada · 07:30 AM</Badge>
+<div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: "3px solid " + theme.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>ok</div>
+<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN EXITOSO</h2>
+<p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>Gym Paraje Altamirano</p>
+<Badge color={theme.green}>Visita registrada</Badge>
 <Btn onClick={() => onNavigate("dashboard")} style={{ marginTop: 32, padding: "12px 32px" }}>Volver al inicio</Btn>
 </>
 ) : (
 <>
-<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "0 0 8px" }}>ESCANEAR GYM</h2>
-<p style={{ color: theme.muted, fontSize: 14, marginBottom: 32 }}>Apunta al código QR del gimnasio</p>
-<div onClick={handleScan} style={{ width: 220, height: 220, border: `2px solid ${scanning ? theme.accent : theme.cardBorder}`, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", background: theme.card, boxShadow: scanning ? `0 0 30px ${theme.accentGlow}` : "none" }}>
-{corners.map((s, i) => <div key={i} style={{ position: "absolute", width: 24, height: 24, borderRadius: 4, ...s }} />)}
-<div style={{ textAlign: "center" }}>
-<div style={{ fontSize: 40, marginBottom: 8 }}>{scanning ? "wait" : "cam"}</div>
-<p style={{ color: theme.muted, fontSize: 12, margin: 0 }}>{scanning ? "Verificando..." : "Toca para simular"}</p>
+<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN</h2>
+<p style={{ color: theme.muted, fontSize: 14, marginBottom: 32 }}>Escanea el codigo QR del gimnasio</p>
+<div style={{ width: 220, height: 220, border: "2px solid " + theme.accent, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", background: theme.card, marginBottom: 24 }}>
+<p style={{ color: theme.muted, fontSize: 13 }}>Apunta al QR del gym</p>
 </div>
-</div>
+<Btn onClick={handleCheckin} style={{ padding: "14px 32px" }}>Confirmar Check-in</Btn>
 </>
 )}
 </div>
