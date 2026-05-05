@@ -41,7 +41,7 @@ const mockVisits = []; const mockVisitsOld = [
 ];
 
 const initialGyms = [
-{ id: 1, name: "Gym Paraje Altamirano", address: "Paraje Altamirano, 56609 México, Méx.", phone: "", hours: "", status: "active", visits: 0, email: "", color: "#e63946", rating: 5.0, distance: "...", lat: 19.2680, lng: -98.9650 },
+{ id: 1, name: "Gym Paraje Altamirano", code: "GYM001", address: "Paraje Altamirano, 56609 México, Méx.", phone: "", hours: "", status: "active", visits: 0, email: "", color: "#e63946", rating: 5.0, distance: "...", lat: 19.2680, lng: -98.9650 },
 ];
 
 const initialRequests = [
@@ -286,29 +286,43 @@ return (
 );
 }
 
-function CheckinScreen({ onNavigate }) {
+function CheckinScreen({ onNavigate, gyms }) {
 const [done, setDone] = useState(false);
-const handleCheckin = () => setDone(true);
+const [code, setCode] = useState("");
+const [error, setError] = useState("");
+const [gymName, setGymName] = useState("");
+
+const handleCheckin = () => {
+  if (!code.trim()) { setError("Ingresa el codigo del gimnasio"); return; }
+  const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim());
+  if (!gym) { setError("Codigo incorrecto. Pidelo al gimnasio."); return; }
+  setGymName(gym.name);
+  setDone(true);
+};
+
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", paddingBottom: 80 }}>
-<button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 22, margin: 24, alignSelf: "flex-start" }}>atras</button>
+<button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 22, margin: 24, alignSelf: "flex-start" }}>←</button>
 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>
 {done ? (
 <>
-<div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: "3px solid " + theme.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>ok</div>
+<div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: "3px solid " + theme.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>✓</div>
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN EXITOSO</h2>
-<p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>Gym Paraje Altamirano</p>
+<p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>{gymName}</p>
 <Badge color={theme.green}>Visita registrada</Badge>
 <Btn onClick={() => onNavigate("dashboard")} style={{ marginTop: 32, padding: "12px 32px" }}>Volver al inicio</Btn>
 </>
 ) : (
 <>
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN</h2>
-<p style={{ color: theme.muted, fontSize: 14, marginBottom: 32 }}>Escanea el codigo QR del gimnasio</p>
-<div style={{ width: 220, height: 220, border: "2px solid " + theme.accent, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", background: theme.card, marginBottom: 24 }}>
-<p style={{ color: theme.muted, fontSize: 13 }}>Apunta al QR del gym</p>
+<p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>Ingresa el codigo del gimnasio</p>
+<p style={{ color: theme.muted, fontSize: 12, marginBottom: 32 }}>El codigo lo proporciona el gimnasio al llegar</p>
+<div style={{ width: 220, height: 220, border: "2px solid " + theme.accent, borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: theme.card, marginBottom: 24, padding: 20 }}>
+<p style={{ color: theme.muted, fontSize: 12, margin: "0 0 16px" }}>Codigo del gimnasio</p>
+<input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="Ej. GYM001" maxLength={10} style={{ width: "100%", background: theme.bg, border: "2px solid " + theme.accent, borderRadius: 10, padding: "12px", color: theme.text, fontSize: 22, fontWeight: 800, textAlign: "center", outline: "none", letterSpacing: 4, boxSizing: "border-box" }} />
+{error && <p style={{ color: theme.accent, fontSize: 12, margin: "12px 0 0" }}>{error}</p>}
 </div>
-<Btn onClick={handleCheckin} style={{ padding: "14px 32px" }}>Confirmar Check-in</Btn>
+<Btn onClick={handleCheckin} style={{ padding: "14px 32px", width: "100%" }}>Confirmar Check-in</Btn>
 </>
 )}
 </div>
@@ -948,7 +962,7 @@ return (
 {!loading && screen === "login"     && <LoginScreen onLogin={handleLogin} onBack={() => setScreen("splash")} onSwitch={() => setScreen("register")} />}
 {!loading && screen === "register"  && <RegisterScreen onRegister={(plan, user) => handleLogin("user", user)} onBack={() => setScreen("splash")} />}
 {!loading && screen === "dashboard" && <UserDashboard onNavigate={nav} onLogout={handleLogout} user={currentUser} />}
-{!loading && screen === "checkin"   && <CheckinScreen onNavigate={nav} />}
+{!loading && screen === "checkin"   && <CheckinScreen onNavigate={nav} gyms={gyms} />}
 {!loading && screen === "gyms"      && <GymsScreen onNavigate={nav} gyms={gyms.filter(g => g.status === "active")} />}
 {!loading && screen === "history"   && <HistoryScreen onNavigate={nav} />}
 {!loading && screen === "profile"   && <ProfileScreen onNavigate={nav} onLogout={handleLogout} user={currentUser} />}
