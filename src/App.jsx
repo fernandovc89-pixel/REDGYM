@@ -293,9 +293,10 @@ const [error, setError] = useState("");
 const [gymName, setGymName] = useState("");
 
 const handleCheckin = () => {
-  if (code.trim().length < 4) { setError("El codigo debe tener al menos 4 caracteres"); return; }
-  const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim());
-  setGymName(gym ? gym.name : code.toUpperCase());
+  if (!code.trim()) { setError("Ingresa el codigo del gimnasio"); return; }
+  const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim() && g.status === "active");
+  if (!gym) { setError("Codigo invalido. Verifica con el gimnasio."); return; }
+  setGymName(gym.name);
   setError("");
   setDone(true);
 };
