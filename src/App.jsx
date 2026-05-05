@@ -716,7 +716,7 @@ return (
 function AdminDashboard({ onLogout, gyms: savedGyms, setGyms: setSavedGyms }) {
 const [adminTab, setAdminTab] = useState("overview");
 const [showAddGym, setShowAddGym] = useState(false);
-const [gymForm, setGymForm] = useState({ name: "", address: "", phone: "", hours: "", email: "", coords: "" });
+const [gymForm, setGymForm] = useState({ name: "", address: "", phone: "", hours: "", email: "", coords: "", code: "" });
 const [requests, setRequests] = useState(initialRequests);
 useEffect(() => {
 const saved = db.get("redgym-solicitudes");
@@ -739,7 +739,7 @@ if (res.error) { showToast("❌ " + res.error, "#ff4444"); return; }
 const updated = [...savedGyms, res.gym];
 setSavedGyms(updated);
 db.save("redgym-gimnasios", updated);
-setGymForm({ name: "", address: "", phone: "", hours: "", email: "", coords: "" });
+setGymForm({ name: "", address: "", phone: "", hours: "", email: "", coords: "", code: "" });
 setShowAddGym(false);
 showToast(lat ? "✅ Gimnasio guardado con ubicación" : "✅ Gimnasio guardado");
 };
@@ -827,7 +827,7 @@ return (
           <Card style={{ marginBottom: 16, border: `1px solid ${theme.accent}33` }}>
             <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: "0 0 14px" }}>Nuevo Gimnasio</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[{ key: "name", ph: "Nombre del gimnasio *" }, { key: "address", ph: "Dirección completa *" }, { key: "phone", ph: "Teléfono de contacto" }, { key: "email", ph: "Correo electrónico" }, { key: "hours", ph: "Horario (ej. 5:00 AM - 11:00 PM)" }].map(f => (
+              {[{ key: "name", ph: "Nombre del gimnasio *" }, { key: "address", ph: "Dirección completa *" }, { key: "phone", ph: "Teléfono de contacto" }, { key: "email", ph: "Correo electrónico" }, { key: "hours", ph: "Horario (ej. 5:00 AM - 11:00 PM)" }, { key: "code", ph: "Codigo de acceso (ej. GYM001)" }].map(f => (
                 <input key={f.key} value={gymForm[f.key]} onChange={e => setGymForm({ ...gymForm, [f.key]: e.target.value })} placeholder={f.ph} style={inp} />
               ))}
               <div>
