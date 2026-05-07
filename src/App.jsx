@@ -705,9 +705,9 @@ return (
 ))}
 </div>
 <Card style={{ textAlign: "center", padding: 24 }}>
-<p style={{ color: theme.muted, fontSize: 12, margin: "0 0 12px" }}>Código QR del gimnasio</p>
-<div style={{ width: 120, height: 120, margin: "0 auto", background: "#fff", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60 }}>qr</div>
-<p style={{ color: theme.muted, fontSize: 11, margin: "12px 0 0" }}>Los usuarios escanean este código al llegar</p>
+<p style={{ color: theme.muted, fontSize: 12, margin: "0 0 12px" }}>Codigo de acceso del gimnasio</p>
+<div style={{ width: 160, height: 80, margin: "0 auto", background: theme.accent, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "#fff", fontSize: 28, fontWeight: 900, letterSpacing: 4 }}>GYM001</span></div>
+<p style={{ color: theme.muted, fontSize: 11, margin: "12px 0 0" }}>Comparte este codigo con tus clientes al llegar</p>
 </Card>
 </div>
 </div>
@@ -724,6 +724,8 @@ const saved = db.get("redgym-solicitudes");
 if (Array.isArray(saved) && saved.length > 0) setRequests(saved);
 }, []);
 const [confirmDelete, setConfirmDelete] = useState(null);
+const [editingGym, setEditingGym] = useState(null);
+const [editForm, setEditForm] = useState({ name: "", address: "", phone: "", hours: "", email: "", coords: "", code: "" });
 const [toast, setToast] = useState(null);
 
 const showToast = (msg, color = theme.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 3000); };
@@ -731,7 +733,8 @@ const handleAddGym = async () => {
 if (!gymForm.name || !gymForm.address) return;
 let lat = null, lng = null;
 if (gymForm.coords && gymForm.coords.includes(",")) {
-const parts = gymForm.coords.split(",").map(s => parseFloat(s.trim()));
+const cleaned = gymForm.coords.replace(/[()]/g, "");
+const parts = cleaned.split(",").map(s => parseFloat(s.trim()));
 if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { lat = parts[0]; lng = parts[1]; }
 }
 showToast("wait Guardando...", theme.gold);
@@ -770,6 +773,22 @@ await gymService.update(id, { status: newStatus });
 const updated = savedGyms.map(g => g.id === id ? { ...g, status: newStatus } : g);
 setSavedGyms(updated);
 db.save("redgym-gimnasios", updated);
+};
+const handleSaveEdit = async () => {
+if (!editForm.name || !editForm.address) return;
+let lat = null, lng = null;
+if (editForm.coords && editForm.coords.includes(",")) {
+const cleaned = editForm.coords.replace(/[()]/g, "");
+const parts = cleaned.split(",").map(s => parseFloat(s.trim()));
+if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { lat = parts[0]; lng = parts[1]; }
+}
+const updates = { name: editForm.name, address: editForm.address, phone: editForm.phone, email: editForm.email, hours: editForm.hours, lat, lng, code: editForm.code };
+await gymService.update(editingGym, updates);
+const updated = savedGyms.map(g => g.id === editingGym ? { ...g, ...updates } : g);
+setSavedGyms(updated);
+db.save("redgym-gimnasios", updated);
+setEditingGym(null);
+showToast("✅ Gimnasio actualizado");
 };
 
 const inp = { width: "100%", background: theme.bg, border: `1px solid ${theme.cardBorder}`, borderRadius: 10, padding: "11px 14px", color: theme.text, fontSize: 13, outline: "none", boxSizing: "border-box" };
@@ -843,30 +862,53 @@ return (
         )}
         <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 10px" }}>{savedGyms.length} gimnasios en la red</p>
         {savedGyms.map(g => (
-          <Card key={g.id} style={{ marginBottom: 10, padding: 14, border: `1px solid ${g.status === "active" ? theme.green + "33" : theme.cardBorder}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{g.name}</p>
-                <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 2px" }}>pin {g.address}</p>
-                {g.phone && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>📞 {g.phone}</p>}
-                {g.hours && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>clock {g.hours}</p>}
-              </div>
-              <Badge color={g.status === "active" ? theme.green : theme.muted}>{g.status === "active" ? "Activo" : "Inactivo"}</Badge>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${theme.cardBorder}` }}>
-              <span style={{ color: theme.muted, fontSize: 12 }}>chart {g.visits} visitas este mes</span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => handleToggle(g.id)} style={{ padding: "5px 12px", border: `1px solid ${g.status === "active" ? theme.accent + "55" : theme.green + "55"}`, borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: g.status === "active" ? theme.accent : theme.green }}>{g.status === "active" ? "Desactivar" : "Activar"}</button>
-                {confirmDelete === g.id ? (
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={async () => { await gymService.delete(g.id); const updated = savedGyms.filter(x => x.id !== g.id); setSavedGyms(updated); db.save("redgym-gimnasios", updated); setConfirmDelete(null); showToast("🗑 Gimnasio eliminado", theme.accent); }} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: "#ff444422", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>✓ Sí</button>
-                    <button onClick={() => setConfirmDelete(null)} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: theme.cardBorder, cursor: "pointer", fontSize: 11, fontWeight: 700, color: theme.muted }}>No</button>
+          <Card key={g.id} style={{ marginBottom: 10, padding: 14, border: `1px solid ${editingGym === g.id ? theme.accent + "55" : g.status === "active" ? theme.green + "33" : theme.cardBorder}` }}>
+            {editingGym === g.id ? (
+              <div>
+                <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: "0 0 14px" }}>Editar Gimnasio</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[{ key: "name", ph: "Nombre del gimnasio *" }, { key: "address", ph: "Dirección completa *" }, { key: "phone", ph: "Teléfono de contacto" }, { key: "email", ph: "Correo electrónico" }, { key: "hours", ph: "Horario (ej. 5:00 AM - 11:00 PM)" }, { key: "code", ph: "Codigo de acceso (ej. GYM001)" }].map(f => (
+                    <input key={f.key} value={editForm[f.key]} onChange={e => setEditForm({ ...editForm, [f.key]: e.target.value })} placeholder={f.ph} style={inp} />
+                  ))}
+                  <div>
+                    <input value={editForm.coords} onChange={e => setEditForm({ ...editForm, coords: e.target.value })} placeholder="Coordenadas (ej. 19.2680, -98.9650)" style={inp} />
+                    <p style={{ color: theme.muted, fontSize: 11, margin: "6px 0 0", lineHeight: 1.5 }}>pin Google Maps → mantén presionado → copia los números</p>
                   </div>
-                ) : (
-                  <button onClick={() => setConfirmDelete(g.id)} style={{ padding: "5px 12px", border: "1px solid #ff444433", borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>🗑 Borrar</button>
-                )}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Btn onClick={handleSaveEdit} disabled={!editForm.name || !editForm.address} style={{ flex: 1, padding: "10px" }}>✓ Guardar</Btn>
+                    <button onClick={() => setEditingGym(null)} style={{ flex: 1, padding: "10px", border: `1px solid ${theme.cardBorder}`, borderRadius: 10, background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: 700, color: theme.muted }}>Cancelar</button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>{g.name}</p>
+                    <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 2px" }}>pin {g.address}</p>
+                    {g.phone && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>📞 {g.phone}</p>}
+                    {g.hours && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>clock {g.hours}</p>}
+                    {g.code && <p style={{ color: theme.muted, fontSize: 11, margin: "1px 0" }}>🔑 {g.code}</p>}
+                  </div>
+                  <Badge color={g.status === "active" ? theme.green : theme.muted}>{g.status === "active" ? "Activo" : "Inactivo"}</Badge>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${theme.cardBorder}` }}>
+                  <span style={{ color: theme.muted, fontSize: 12 }}>chart {g.visits} visitas este mes</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setEditingGym(g.id); setEditForm({ name: g.name || "", address: g.address || "", phone: g.phone || "", hours: g.hours || "", email: g.email || "", coords: (g.lat != null && g.lng != null) ? `${g.lat}, ${g.lng}` : "", code: g.code || "" }); }} style={{ padding: "5px 12px", border: `1px solid ${theme.blue}55`, borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: theme.blue }}>✏️ Editar</button>
+                    <button onClick={() => handleToggle(g.id)} style={{ padding: "5px 12px", border: `1px solid ${g.status === "active" ? theme.accent + "55" : theme.green + "55"}`, borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: g.status === "active" ? theme.accent : theme.green }}>{g.status === "active" ? "Desactivar" : "Activar"}</button>
+                    {confirmDelete === g.id ? (
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button onClick={async () => { await gymService.delete(g.id); const updated = savedGyms.filter(x => x.id !== g.id); setSavedGyms(updated); db.save("redgym-gimnasios", updated); setConfirmDelete(null); showToast("🗑 Gimnasio eliminado", theme.accent); }} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: "#ff444422", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>✓ Sí</button>
+                        <button onClick={() => setConfirmDelete(null)} style={{ padding: "5px 10px", border: "none", borderRadius: 8, background: theme.cardBorder, cursor: "pointer", fontSize: 11, fontWeight: 700, color: theme.muted }}>No</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmDelete(g.id)} style={{ padding: "5px 12px", border: "1px solid #ff444433", borderRadius: 8, background: "transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff4444" }}>🗑 Borrar</button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         ))}
       </>
