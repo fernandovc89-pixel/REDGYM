@@ -29,25 +29,13 @@ perks: ["12 visitas/mes", "Acceso a todos los gyms", "Check-in por QR", "Histori
 perks: ["20 visitas/mes", "Acceso a todos los gyms", "Check-in por QR", "Historial de visitas", "Prioridad en horarios pico", "Clases premium incluidas", "Asesoría personalizada", "Visita extra: $60 c/u"] },
 ];
 
-const mockVisits = []; const mockVisitsOld = [
-{ date: "12 Jul 2025", gym: "PowerGym Chalco", time: "07:30 AM", plan: "Estándar" },
-{ date: "10 Jul 2025", gym: "FitZone Valle", time: "06:15 PM", plan: "Estándar" },
-{ date: "08 Jul 2025", gym: "PowerGym Chalco", time: "08:00 AM", plan: "Estándar" },
-{ date: "05 Jul 2025", gym: "EliteBody Center", time: "05:30 PM", plan: "Estándar" },
-{ date: "03 Jul 2025", gym: "PowerGym Chalco", time: "07:45 AM", plan: "Estándar" },
-{ date: "01 Jul 2025", gym: "FitZone Valle", time: "09:00 AM", plan: "Estándar" },
-{ date: "28 Jun 2025", gym: "PowerGym Chalco", time: "07:30 AM", plan: "Estándar" },
-{ date: "25 Jun 2025", gym: "EliteBody Center", time: "06:00 PM", plan: "Estándar" },
-];
+const mockVisits = [];
 
 const initialGyms = [
 { id: 1, name: "Gym Paraje Altamirano", code: "GYM001", address: "Paraje Altamirano, 56609 México, Méx.", phone: "", hours: "", status: "active", visits: 0, email: "", color: "#e63946", rating: 5.0, distance: "...", lat: 19.2680, lng: -98.9650 },
 ];
 
-const initialRequests = [
-{ id: 4, name: "IronFit Gym", address: "Calle Juárez #22, Chalco", phone: "55 3333 2222", hours: "6:00 AM - 10:00 PM", email: "iron@gym.com", status: "pending", date: "15 Jul 2025" },
-{ id: 5, name: "MaxForce Center", address: "Av. Hidalgo #55, Valle de Chalco", phone: "55 7777 8888", hours: "5:00 AM - 11:00 PM", email: "max@gym.com", status: "pending", date: "14 Jul 2025" },
-];
+const initialRequests = [];
 
 function DumbbellIcon({ size = 22, color = "#fff" }) {
 return (
@@ -758,7 +746,7 @@ const parts = cleaned.split(",").map(s => parseFloat(s.trim()));
 if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { lat = parts[0]; lng = parts[1]; }
 }
 showToast("wait Guardando...", theme.gold);
-const res = await gymService.add({ name: gymForm.name, address: gymForm.address, phone: gymForm.phone, email: gymForm.email, hours: gymForm.hours, lat, lng });
+const res = await gymService.add({ name: gymForm.name, address: gymForm.address, phone: gymForm.phone, email: gymForm.email, hours: gymForm.hours, lat, lng, code: gymForm.code });
 if (res.error) { showToast("❌ " + res.error, "#ff4444"); return; }
 const updated = [...savedGyms, res.gym];
 setSavedGyms(updated);
@@ -1002,9 +990,13 @@ setScreen("splash");
 const loadGyms = async () => {
 try {
 const data = await gymService.getAll();
-setGyms(data.length > 0 ? data : initialGyms);
+const localSaved = db.get("redgym-gimnasios");
+const merged = data.map(g => {
+const local = localSaved.find(l => String(l.id) === String(g.id));
+return (local?.code && !g.code) ? { ...g, code: local.code } : g;
+});
+setGyms(merged.length > 0 ? merged : initialGyms);
 } catch(e) {
-// fallback to localStorage if Supabase fails
 const saved = db.get("redgym-gimnasios");
 setGyms(Array.isArray(saved) && saved.length > 0 ? saved : initialGyms);
 }
