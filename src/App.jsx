@@ -294,7 +294,8 @@ const handleCheckin = async () => {
   const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim() && g.status === "active");
   if (!gym) { setError("Codigo invalido. Verifica con el gimnasio."); return; }
   setSaving(true);
-  if (user?.id) {
+  const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (user?.id && isUUID(gym.id)) {
     const res = await visitService.add(user.id, gym.id);
     if (res.error) { setError(res.error); setSaving(false); return; }
   }
