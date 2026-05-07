@@ -72,18 +72,24 @@ export const gymService = {
 
 export const visitService = {
   async add(usuario_id, gimnasio_id) {
+    console.log('[visitService.add] inserting:', { usuario_id, gimnasio_id })
     const { error } = await supabase.from('visitas').insert({
       usuario_id, gimnasio_id, fecha: new Date().toISOString()
     })
+    if (error) console.error('[visitService.add] error:', error.message, error)
+    else console.log('[visitService.add] success')
     return error ? { error: error.message } : { ok: true }
   },
   async getByUser(usuario_id) {
-    const { data } = await supabase
+    console.log('[visitService.getByUser] uid:', usuario_id)
+    const { data, error } = await supabase
       .from('visitas')
       .select('id, fecha, gimnasio_id, gimnasios(nombre)')
       .eq('usuario_id', usuario_id)
       .order('fecha', { ascending: false })
       .limit(50)
+    if (error) console.error('[visitService.getByUser] error:', error.message, error)
+    console.log('[visitService.getByUser] rows:', data?.length ?? 0, data)
     return (data || []).map(v => ({
       id: v.id,
       gym: v.gimnasios?.nombre || '—',

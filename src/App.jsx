@@ -552,8 +552,14 @@ return (
 );
 }
 
-function HistoryScreen({ onNavigate }) {
-const gymCount = mockVisits.reduce((acc, v) => { acc[v.gym] = (acc[v.gym] || 0) + 1; return acc; }, {});
+function HistoryScreen({ onNavigate, user }) {
+const [visits, setVisits] = useState([]);
+useEffect(() => {
+  if (user?.id) visitService.getByUser(user.id).then(setVisits);
+}, [user?.id]);
+const now = new Date();
+const monthVisits = visits.filter(v => { const d = new Date(v.rawDate); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+const gymCount = visits.reduce((acc, v) => { acc[v.gym] = (acc[v.gym] || 0) + 1; return acc; }, {});
 const topGym = Object.entries(gymCount).sort((a, b) => b[1] - a[1])[0] || ["Sin visitas", 0];
 const barColors = [theme.blue, theme.green, theme.gold];
 return (
@@ -563,7 +569,7 @@ return (
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "16px 0 4px" }}>MI HISTORIAL</h2>
 <p style={{ color: theme.muted, fontSize: 13, marginBottom: 20 }}>Todas tus visitas registradas</p>
 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-{[{ label: "Este mes", value: String(mockVisits.filter(v => new Date(v.date).getMonth() === new Date().getMonth()).length), icon: "cal", color: theme.blue }, { label: "Total", value: String(mockVisits.length), icon: "gym️", color: theme.green }, { label: "Favorito", value: topGym[0].split(" ")[0], icon: "star", color: theme.gold }].map((s, i) => (
+{[{ label: "Este mes", value: String(monthVisits.length), icon: "cal", color: theme.blue }, { label: "Total", value: String(visits.length), icon: "gym️", color: theme.green }, { label: "Favorito", value: topGym[0].split(" ")[0], icon: "star", color: theme.gold }].map((s, i) => (
 <Card key={i} style={{ padding: 12, textAlign: "center" }}>
 <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: i === 2 ? 11 : 20, margin: 0 }}>{s.value}</p>
@@ -571,6 +577,7 @@ return (
 </Card>
 ))}
 </div>
+{visits.length > 0 && (
 <Card style={{ marginBottom: 20 }}>
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>Visitas por gimnasio</p>
 {Object.entries(gymCount).map(([gym, count], i) => (
@@ -580,25 +587,29 @@ return (
 <span style={{ color: theme.text, fontSize: 12, fontWeight: 700 }}>{count} visitas</span>
 </div>
 <div style={{ background: theme.cardBorder, borderRadius: 4, height: 6 }}>
-<div style={{ width: `${(count / mockVisits.length) * 100}%`, height: "100%", background: barColors[i] || theme.blue, borderRadius: 4 }} />
+<div style={{ width: `${(count / visits.length) * 100}%`, height: "100%", background: barColors[i] || theme.blue, borderRadius: 4 }} />
 </div>
 </div>
 ))}
 </Card>
+)}
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>Todas las visitas</p>
 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-{mockVisits.map((v, i) => (
-<Card key={i} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-<div style={{ width: 38, height: 38, borderRadius: 10, background: theme.green + "20", border: `1px solid ${theme.green}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✓</div>
-<div>
-<p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.gym}</p>
-<p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
-</div>
-</div>
-<span style={{ color: theme.muted, fontSize: 11 }}>{v.date}</span>
-</Card>
-))}
+{visits.length === 0
+  ? <p style={{ color: theme.muted, fontSize: 13, textAlign: "center", padding: "24px 0" }}>Aún no tienes visitas registradas</p>
+  : visits.map((v) => (
+    <Card key={v.id} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: theme.green + "20", border: `1px solid ${theme.green}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✓</div>
+        <div>
+          <p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.gym}</p>
+          <p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
+        </div>
+      </div>
+      <span style={{ color: theme.muted, fontSize: 11 }}>{v.date}</span>
+    </Card>
+  ))
+}
 </div>
 </div>
 <BottomNav active="history" onNavigate={onNavigate} />
@@ -1021,7 +1032,7 @@ return (
 {!loading && screen === "dashboard" && <UserDashboard onNavigate={nav} onLogout={handleLogout} user={currentUser} />}
 {!loading && screen === "checkin"   && <CheckinScreen onNavigate={nav} gyms={gyms} user={currentUser} />}
 {!loading && screen === "gyms"      && <GymsScreen onNavigate={nav} gyms={gyms.filter(g => g.status === "active")} />}
-{!loading && screen === "history"   && <HistoryScreen onNavigate={nav} />}
+{!loading && screen === "history"   && <HistoryScreen onNavigate={nav} user={currentUser} />}
 {!loading && screen === "profile"   && <ProfileScreen onNavigate={nav} onLogout={handleLogout} user={currentUser} />}
 {!loading && screen === "gym"       && <GymDashboard onLogout={handleLogout} />}
 {!loading && screen === "admin"     && <AdminDashboard onLogout={handleLogout} gyms={gyms} setGyms={setGyms} />}
