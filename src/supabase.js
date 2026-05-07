@@ -73,26 +73,34 @@ export const gymService = {
 export const visitService = {
   async add(usuario_id, gimnasio_id) {
     console.log('[visitService.add] inserting:', { usuario_id, gimnasio_id })
-    const { error } = await supabase.from('visitas').insert({
+    const { data, error } = await supabase.from('visitas').insert({
       usuario_id, gimnasio_id, fecha: new Date().toISOString()
-    })
+    }).select()
     if (error) console.error('[visitService.add] error:', error.message, error)
-    else console.log('[visitService.add] success')
+    else console.log('[visitService.add] inserted row:', data)
     return error ? { error: error.message } : { ok: true }
+  },
+  async _gymNames(ids) {
+    if (!ids.length) return {}
+    const { data } = await supabase.from('gimnasios').select('id, nombre').in('id', ids)
+    const map = {}
+    ;(data || []).forEach(g => { map[g.id] = g.nombre })
+    return map
   },
   async getByUser(usuario_id) {
     console.log('[visitService.getByUser] uid:', usuario_id)
     const { data, error } = await supabase
       .from('visitas')
-      .select('id, fecha, gimnasio_id, gimnasios(nombre)')
+      .select('id, fecha, gimnasio_id')
       .eq('usuario_id', usuario_id)
       .order('fecha', { ascending: false })
       .limit(50)
-    if (error) console.error('[visitService.getByUser] error:', error.message, error)
-    console.log('[visitService.getByUser] rows:', data?.length ?? 0, data)
+    if (error) { console.error('[visitService.getByUser] error:', error.message, error); return [] }
+    console.log('[visitService.getByUser] rows:', data?.length ?? 0)
+    const gymNames = await visitService._gymNames([...new Set((data || []).map(v => v.gimnasio_id).filter(Boolean))])
     return (data || []).map(v => ({
       id: v.id,
-      gym: v.gimnasios?.nombre || '—',
+      gym: gymNames[v.gimnasio_id] || '—',
       date: new Date(v.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }),
       time: new Date(v.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
       rawDate: v.fecha,
@@ -100,14 +108,16 @@ export const visitService = {
   },
   async getToday() {
     const start = new Date(); start.setHours(0, 0, 0, 0)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('visitas')
-      .select('id, fecha, usuario_id, gimnasio_id, gimnasios(nombre)')
+      .select('id, fecha, usuario_id, gimnasio_id')
       .gte('fecha', start.toISOString())
       .order('fecha', { ascending: false })
+    if (error) { console.error('[visitService.getToday] error:', error.message); return [] }
+    const gymNames = await visitService._gymNames([...new Set((data || []).map(v => v.gimnasio_id).filter(Boolean))])
     return (data || []).map(v => ({
       id: v.id,
-      gym: v.gimnasios?.nombre || '—',
+      gym: gymNames[v.gimnasio_id] || '—',
       time: new Date(v.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
       usuario_id: v.usuario_id,
     }))
