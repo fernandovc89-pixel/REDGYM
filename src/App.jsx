@@ -296,7 +296,7 @@ const handleCheckin = async () => {
   setSaving(true);
   if (user?.id) {
     const res = await visitService.add(user.id, gym.id);
-    if (res.error) { setError("Error al registrar visita. Intenta de nuevo."); setSaving(false); return; }
+    if (res.error) { setError(res.error); setSaving(false); return; }
   }
   setSaving(false);
   setGymName(gym.name);
