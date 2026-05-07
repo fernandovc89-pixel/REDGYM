@@ -791,7 +791,8 @@ const parts = cleaned.split(",").map(s => parseFloat(s.trim()));
 if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { lat = parts[0]; lng = parts[1]; }
 }
 const updates = { name: editForm.name, address: editForm.address, phone: editForm.phone, email: editForm.email, hours: editForm.hours, lat, lng, code: editForm.code };
-await gymService.update(editingGym, updates);
+const res = await gymService.update(editingGym, updates);
+if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
 const updated = savedGyms.map(g => g.id === editingGym ? { ...g, ...updates } : g);
 setSavedGyms(updated);
 db.save("redgym-gimnasios", updated);

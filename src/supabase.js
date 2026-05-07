@@ -61,7 +61,9 @@ export const gymService = {
     if (updates.lat !== undefined) mapped.lat = updates.lat
     if (updates.lng !== undefined) mapped.lng = updates.lng
     if (updates.code !== undefined) mapped.codigo = updates.code
-    await supabase.from('gimnasios').update(mapped).eq('id', id)
+    const { error } = await supabase.from('gimnasios').update(mapped).eq('id', id)
+    if (error) return { error: error.message }
+    return { ok: true }
   },
   async delete(id) {
     await supabase.from('gimnasios').delete().eq('id', id)
