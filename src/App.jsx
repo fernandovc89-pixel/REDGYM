@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { authService, gymService, requestService } from "./supabase.js";
+import { authService, gymService, requestService, visitService } from "./supabase.js";
 
 // -- PERSISTENT STORAGE --------------------------------------------------------
 const db = {
@@ -228,8 +228,13 @@ return (
 
 function UserDashboard({ onNavigate, onLogout, user }) {
 const plan = plans[0];
-const usedVisits = 0;
-const pct = (usedVisits / plan.visits) * 100;
+const [visits, setVisits] = useState([]);
+useEffect(() => {
+  if (user?.id) visitService.getByUser(user.id).then(setVisits);
+}, [user?.id]);
+const now = new Date();
+const usedVisits = visits.filter(v => { const d = new Date(v.rawDate); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
+const pct = Math.min((usedVisits / plan.visits) * 100, 100);
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, paddingBottom: 80 }}>
 <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -267,18 +272,21 @@ return (
 </div>
 <h3 style={{ color: theme.text, fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Visitas recientes</h3>
 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-{mockVisits.slice(0, 3).map((v, i) => (
-<Card key={i} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-<div style={{ width: 36, height: 36, borderRadius: 10, background: theme.green + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✓</div>
-<div>
-<p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.gym}</p>
-<p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
-</div>
-</div>
-<span style={{ color: theme.muted, fontSize: 12 }}>{v.date}</span>
-</Card>
-))}
+{visits.length === 0
+  ? <p style={{ color: theme.muted, fontSize: 13, textAlign: "center", padding: "16px 0" }}>Aún no tienes visitas registradas</p>
+  : visits.slice(0, 3).map((v) => (
+    <Card key={v.id} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: theme.green + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✓</div>
+        <div>
+          <p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.gym}</p>
+          <p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
+        </div>
+      </div>
+      <span style={{ color: theme.muted, fontSize: 12 }}>{v.date}</span>
+    </Card>
+  ))
+}
 </div>
 </div>
 <BottomNav active="dashboard" onNavigate={onNavigate} />
@@ -286,16 +294,23 @@ return (
 );
 }
 
-function CheckinScreen({ onNavigate, gyms }) {
+function CheckinScreen({ onNavigate, gyms, user }) {
 const [done, setDone] = useState(false);
 const [code, setCode] = useState("");
 const [error, setError] = useState("");
 const [gymName, setGymName] = useState("");
+const [saving, setSaving] = useState(false);
 
-const handleCheckin = () => {
+const handleCheckin = async () => {
   if (!code.trim()) { setError("Ingresa el codigo del gimnasio"); return; }
   const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim() && g.status === "active");
   if (!gym) { setError("Codigo invalido. Verifica con el gimnasio."); return; }
+  setSaving(true);
+  if (user?.id) {
+    const res = await visitService.add(user.id, gym.id);
+    if (res.error) { setError("Error al registrar visita. Intenta de nuevo."); setSaving(false); return; }
+  }
+  setSaving(false);
   setGymName(gym.name);
   setError("");
   setDone(true);
@@ -323,7 +338,7 @@ return (
 <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="Ej. GYM001" maxLength={10} style={{ width: "100%", background: theme.bg, border: "2px solid " + theme.accent, borderRadius: 10, padding: "12px", color: theme.text, fontSize: 22, fontWeight: 800, textAlign: "center", outline: "none", letterSpacing: 4, boxSizing: "border-box" }} />
 {error && <p style={{ color: theme.accent, fontSize: 12, margin: "12px 0 0" }}>{error}</p>}
 </div>
-<Btn onClick={handleCheckin} style={{ padding: "14px 32px", width: "100%" }}>Confirmar Check-in</Btn>
+<Btn onClick={handleCheckin} disabled={saving} style={{ padding: "14px 32px", width: "100%" }}>{saving ? "Registrando..." : "Confirmar Check-in"}</Btn>
 </>
 )}
 </div>
@@ -669,8 +684,8 @@ return (
 }
 
 function GymDashboard({ onLogout }) {
-const planColor = { "Estándar": theme.blue, "Premium": theme.accent };
-const todayVisits = [{ name: "Fernando G.", plan: "Estándar", time: "07:30 AM" }, { name: "María L.", plan: "Premium", time: "08:15 AM" }, { name: "Carlos R.", plan: "Estándar", time: "09:00 AM" }, { name: "Ana P.", plan: "Premium", time: "10:30 AM" }];
+const [todayVisits, setTodayVisits] = useState([]);
+useEffect(() => { visitService.getToday().then(setTodayVisits); }, []);
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, paddingBottom: 30 }}>
 <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -681,7 +696,7 @@ return (
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Panel de</p>
 <h2 style={{ color: theme.text, fontSize: 20, fontWeight: 800, margin: "2px 0 20px" }}>PowerGym Chalco gym️</h2>
 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-{[{ label: "Visitas hoy", value: "4", icon: "users", color: theme.blue }, { label: "Ingresos hoy", value: "$236", icon: "money", color: theme.green }, { label: "Este mes", value: "47 visitas", icon: "cal", color: theme.gold }, { label: "Mes actual", value: "$2,773", icon: "trend", color: theme.accent }].map((s, i) => (
+{[{ label: "Visitas hoy", value: String(todayVisits.length), icon: "users", color: theme.blue }, { label: "Ingresos hoy", value: "$—", icon: "money", color: theme.green }, { label: "Este mes", value: "—", icon: "cal", color: theme.gold }, { label: "Mes actual", value: "$—", icon: "trend", color: theme.accent }].map((s, i) => (
 <Card key={i} style={{ padding: 14 }}>
 <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
 <p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
@@ -691,18 +706,21 @@ return (
 </div>
 <h3 style={{ color: theme.text, fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Visitas de hoy</h3>
 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-{todayVisits.map((v, i) => (
-<Card key={i} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-<div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.accent + "22", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: theme.accent, fontSize: 13 }}>{v.name.charAt(0)}</div>
-<div>
-<p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.name}</p>
-<p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
-</div>
-</div>
-<Badge color={planColor[v.plan]}>{v.plan}</Badge>
-</Card>
-))}
+{todayVisits.length === 0
+  ? <p style={{ color: theme.muted, fontSize: 13, textAlign: "center", padding: "16px 0" }}>Sin visitas hoy</p>
+  : todayVisits.map((v) => (
+    <Card key={v.id} style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.accent + "22", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: theme.accent, fontSize: 13 }}>M</div>
+        <div>
+          <p style={{ color: theme.text, fontSize: 13, fontWeight: 600, margin: 0 }}>{v.gym}</p>
+          <p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{v.time}</p>
+        </div>
+      </div>
+      <Badge color={theme.blue}>Miembro</Badge>
+    </Card>
+  ))
+}
 </div>
 <Card style={{ textAlign: "center", padding: 24 }}>
 <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 12px" }}>Codigo de acceso del gimnasio</p>
@@ -716,6 +734,8 @@ return (
 
 function AdminDashboard({ onLogout, gyms: savedGyms, setGyms: setSavedGyms }) {
 const [adminTab, setAdminTab] = useState("overview");
+const [monthVisits, setMonthVisits] = useState("—");
+useEffect(() => { visitService.getMonthCount().then(n => setMonthVisits(n.toLocaleString("es-MX"))); }, []);
 const [showAddGym, setShowAddGym] = useState(false);
 const [gymForm, setGymForm] = useState({ name: "", address: "", phone: "", hours: "", email: "", coords: "", code: "" });
 const [requests, setRequests] = useState(initialRequests);
@@ -813,7 +833,7 @@ return (
     {adminTab === "overview" && (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-          {[{ label: "Usuarios activos", value: "128", icon: "users", color: theme.blue }, { label: "Gyms en la red", value: String(savedGyms.filter(g => g.status === "active").length), icon: "gym️", color: theme.green }, { label: "Visitas este mes", value: "1,247", icon: "cal", color: theme.gold }, { label: "Ingresos app (15%)", value: "$19,440", icon: "money", color: theme.accent }].map((s, i) => (
+          {[{ label: "Usuarios activos", value: "128", icon: "users", color: theme.blue }, { label: "Gyms en la red", value: String(savedGyms.filter(g => g.status === "active").length), icon: "gym️", color: theme.green }, { label: "Visitas este mes", value: monthVisits, icon: "cal", color: theme.gold }, { label: "Ingresos app (15%)", value: "$19,440", icon: "money", color: theme.accent }].map((s, i) => (
             <Card key={i} style={{ padding: 14 }}>
               <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
               <p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
@@ -1005,7 +1025,7 @@ return (
 {!loading && screen === "login"     && <LoginScreen onLogin={handleLogin} onBack={() => setScreen("splash")} onSwitch={() => setScreen("register")} />}
 {!loading && screen === "register"  && <RegisterScreen onRegister={(plan, user) => handleLogin("user", user)} onBack={() => setScreen("splash")} />}
 {!loading && screen === "dashboard" && <UserDashboard onNavigate={nav} onLogout={handleLogout} user={currentUser} />}
-{!loading && screen === "checkin"   && <CheckinScreen onNavigate={nav} gyms={gyms} />}
+{!loading && screen === "checkin"   && <CheckinScreen onNavigate={nav} gyms={gyms} user={currentUser} />}
 {!loading && screen === "gyms"      && <GymsScreen onNavigate={nav} gyms={gyms.filter(g => g.status === "active")} />}
 {!loading && screen === "history"   && <HistoryScreen onNavigate={nav} />}
 {!loading && screen === "profile"   && <ProfileScreen onNavigate={nav} onLogout={handleLogout} user={currentUser} />}

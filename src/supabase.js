@@ -34,7 +34,8 @@ export const gymService = {
       phone: g.telefono || '', email: g.email || '',
       hours: g.horario || '', lat: g.lat, lng: g.lng,
       color: g.color || '#e63946', rating: g.rating || 5.0,
-      status: g.status, visits: g.visitas || 0, distance: '—'
+      status: g.status, visits: g.visitas || 0, distance: '—',
+      code: g.codigo || ''
     }))
   },
   async add(gym) {
@@ -43,21 +44,80 @@ export const gymService = {
       telefono: gym.phone, email: gym.email,
       horario: gym.hours, lat: gym.lat, lng: gym.lng,
       color: gym.color || '#4dabf7', rating: 4.5,
-      status: 'active', visitas: 0
+      status: 'active', visitas: 0, codigo: gym.code || ''
     }).select()
     if (error) return { error: error.message }
     const g = data[0]
-    return { gym: { id: g.id, name: g.nombre, address: g.direccion, phone: g.telefono||'', email: g.email||'', hours: g.horario||'', lat: g.lat, lng: g.lng, color: g.color, rating: g.rating, status: g.status, visits: 0, distance: '—' } }
+    return { gym: { id: g.id, name: g.nombre, address: g.direccion, phone: g.telefono||'', email: g.email||'', hours: g.horario||'', lat: g.lat, lng: g.lng, color: g.color, rating: g.rating, status: g.status, visits: 0, distance: '—', code: g.codigo||'' } }
   },
   async update(id, updates) {
     const mapped = {}
     if (updates.status !== undefined) mapped.status = updates.status
-    if (updates.name) mapped.nombre = updates.name
+    if (updates.name !== undefined) mapped.nombre = updates.name
+    if (updates.address !== undefined) mapped.direccion = updates.address
+    if (updates.phone !== undefined) mapped.telefono = updates.phone
+    if (updates.email !== undefined) mapped.email = updates.email
+    if (updates.hours !== undefined) mapped.horario = updates.hours
+    if (updates.lat !== undefined) mapped.lat = updates.lat
+    if (updates.lng !== undefined) mapped.lng = updates.lng
+    if (updates.code !== undefined) mapped.codigo = updates.code
     await supabase.from('gimnasios').update(mapped).eq('id', id)
   },
   async delete(id) {
     await supabase.from('gimnasios').delete().eq('id', id)
   }
+}
+
+export const visitService = {
+  async add(usuario_id, gimnasio_id) {
+    const { error } = await supabase.from('visitas').insert({
+      usuario_id, gimnasio_id, fecha: new Date().toISOString()
+    })
+    return error ? { error: error.message } : { ok: true }
+  },
+  async getByUser(usuario_id) {
+    const { data } = await supabase
+      .from('visitas')
+      .select('id, fecha, gimnasio_id, gimnasios(nombre)')
+      .eq('usuario_id', usuario_id)
+      .order('fecha', { ascending: false })
+      .limit(50)
+    return (data || []).map(v => ({
+      id: v.id,
+      gym: v.gimnasios?.nombre || '—',
+      date: new Date(v.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }),
+      time: new Date(v.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+      rawDate: v.fecha,
+    }))
+  },
+  async getToday() {
+    const start = new Date(); start.setHours(0, 0, 0, 0)
+    const { data } = await supabase
+      .from('visitas')
+      .select('id, fecha, usuario_id, gimnasio_id, gimnasios(nombre)')
+      .gte('fecha', start.toISOString())
+      .order('fecha', { ascending: false })
+    return (data || []).map(v => ({
+      id: v.id,
+      gym: v.gimnasios?.nombre || '—',
+      time: new Date(v.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+      usuario_id: v.usuario_id,
+    }))
+  },
+  async getMonthCount() {
+    const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0)
+    const { count } = await supabase
+      .from('visitas')
+      .select('*', { count: 'exact', head: true })
+      .gte('fecha', start.toISOString())
+    return count || 0
+  },
+  async getTotal() {
+    const { count } = await supabase
+      .from('visitas')
+      .select('*', { count: 'exact', head: true })
+    return count || 0
+  },
 }
 
 export const requestService = {
