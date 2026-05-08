@@ -152,7 +152,10 @@ export const userService = {
     return error ? { error: error.message } : { ok: true }
   },
   async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
-    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan, edad, peso_kg, altura_cm, objetivo })
+    const { error } = await supabase.from('usuarios').upsert(
+      { id: userId, plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() },
+      { onConflict: 'id' }
+    )
     return error ? { error: error.message } : { ok: true }
   },
   async getProfile(userId) {

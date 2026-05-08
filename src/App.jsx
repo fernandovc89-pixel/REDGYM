@@ -837,9 +837,27 @@ const handleSaveEditProfile = async () => {
   const res = await userService.saveProfile(user.id, updated);
   setEditProfileLoading(false);
   if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
-  setProfile(prev => ({ ...(prev || {}), ...updated }));
+  const newProfile = { ...(profile || {}), ...updated };
+  setProfile(newProfile);
   setShowEditProfileModal(false);
-  showToast("✅ Perfil actualizado");
+  showToast("✅ Perfil actualizado — generando plan...", theme.gold);
+  // Auto-generate AI plan with the new profile data
+  setGeneratingPlan(true);
+  try {
+    const r = await fetch('/api/generate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ edad: updated.edad, peso_kg: updated.peso_kg, altura_cm: updated.altura_cm, objetivo: updated.objetivo })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    setPlanIA(data.plan);
+    await userService.savePlanIA(user.id, data.plan);
+    showToast("✅ Plan generado");
+  } catch (e) {
+    showToast("❌ " + e.message, "#ff4444");
+  }
+  setGeneratingPlan(false);
 };
 
 const modalOverlay = { position: "fixed", inset: 0, background: "#000000cc", zIndex: 100, display: "flex", alignItems: "flex-end" };
