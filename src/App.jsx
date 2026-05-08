@@ -803,23 +803,14 @@ const handleChangePassword = async () => {
 };
 
 const fetchAnthropicPlan = async ({ edad, peso_kg, altura_cm, objetivo }) => {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/generate-plan', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-allow-browser': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: `Eres un entrenador personal experto. Genera un plan de entrenamiento semanal personalizado en español para:\n- Edad: ${edad} años\n- Peso: ${peso_kg} kg\n- Altura: ${altura_cm} cm\n- Objetivo: ${objetivo}\n\nResponde ÚNICAMENTE con JSON válido, sin texto adicional:\n{\n  "resumen": "descripción breve motivacional del plan (1-2 oraciones)",\n  "dias": [\n    { "dia": "Lunes", "enfoque": "nombre del tipo de entreno", "ejercicios": ["ejercicio 1", "ejercicio 2", "ejercicio 3", "ejercicio 4"] },\n    { "dia": "Martes", "enfoque": "...", "ejercicios": ["..."] },\n    { "dia": "Miércoles", "enfoque": "...", "ejercicios": ["..."] },\n    { "dia": "Jueves", "enfoque": "...", "ejercicios": ["..."] },\n    { "dia": "Viernes", "enfoque": "...", "ejercicios": ["..."] },\n    { "dia": "Sábado", "enfoque": "...", "ejercicios": ["..."] },\n    { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": ["Descanso activo", "Stretching 15 min"] }\n  ],\n  "consejos": ["consejo 1", "consejo 2", "consejo 3"]\n}` }]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ edad, peso_kg, altura_cm, objetivo })
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Anthropic API error');
-  return JSON.parse(data.content[0].text);
+  if (!res.ok || data.error) throw new Error(data.error || 'Error generando plan');
+  return data.plan;
 };
 
 const handleGeneratePlan = async () => {
