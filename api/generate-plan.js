@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   const { edad, peso_kg, altura_cm, objetivo } = req.body || {};
   console.log('[generate-plan] body:', { edad, peso_kg, altura_cm, objetivo });
 
-  const apiKey = process.env.VITE_ANTHROPIC_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.error('[generate-plan] VITE_ANTHROPIC_KEY is not set');
     return res.status(500).json({ error: 'API key not configured on server' });
