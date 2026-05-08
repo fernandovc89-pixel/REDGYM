@@ -22,6 +22,10 @@ export const authService = {
   async getSession() {
     const { data } = await supabase.auth.getSession()
     return data.session?.user || null
+  },
+  async changePassword(newPass) {
+    const { error } = await supabase.auth.updateUser({ password: newPass })
+    return error ? { error: error.message } : { ok: true }
   }
 }
 
@@ -136,6 +140,26 @@ export const visitService = {
       .select('*', { count: 'exact', head: true })
     return count || 0
   },
+}
+
+export const userService = {
+  async getPlan(userId) {
+    const { data } = await supabase.from('usuarios').select('plan').eq('id', userId).single()
+    return data?.plan || 'estandar'
+  },
+  async updatePlan(userId, plan) {
+    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan })
+    return error ? { error: error.message } : { ok: true }
+  }
+}
+
+export const ratingService = {
+  async add(usuario_id, gimnasio_id, estrellas, comentario) {
+    const { error } = await supabase.from('calificaciones').insert({
+      usuario_id, gimnasio_id, estrellas, comentario, fecha: new Date().toISOString()
+    })
+    return error ? { error: error.message } : { ok: true }
+  }
 }
 
 export const requestService = {

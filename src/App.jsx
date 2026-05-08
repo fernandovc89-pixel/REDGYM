@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { authService, gymService, requestService, visitService } from "./supabase.js";
+import { authService, gymService, requestService, visitService, userService, ratingService } from "./supabase.js";
 
 // -- PERSISTENT STORAGE --------------------------------------------------------
 const db = {
@@ -283,39 +283,73 @@ return (
 }
 
 function CheckinScreen({ onNavigate, gyms, user }) {
-const [done, setDone] = useState(false);
+const [step, setStep] = useState("entry"); // "entry" | "rating" | "done"
 const [code, setCode] = useState("");
 const [error, setError] = useState("");
 const [gymName, setGymName] = useState("");
+const [gymId, setGymId] = useState(null);
 const [saving, setSaving] = useState(false);
+const [stars, setStars] = useState(0);
+const [comment, setComment] = useState("");
+const [ratingLoading, setRatingLoading] = useState(false);
+
+const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 const handleCheckin = async () => {
   if (!code.trim()) { setError("Ingresa el codigo del gimnasio"); return; }
   const gym = gyms.find(g => g.code && g.code.toUpperCase() === code.toUpperCase().trim() && g.status === "active");
   if (!gym) { setError("Codigo invalido. Verifica con el gimnasio."); return; }
   setSaving(true);
-  const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   if (user?.id && isUUID(gym.id)) {
     const res = await visitService.add(user.id, gym.id);
     if (res.error) { setError(res.error); setSaving(false); return; }
   }
   setSaving(false);
   setGymName(gym.name);
+  setGymId(gym.id);
   setError("");
-  setDone(true);
+  setStep("rating");
+};
+
+const handleRate = async () => {
+  setRatingLoading(true);
+  if (user?.id && stars > 0 && gymId && isUUID(gymId)) {
+    await ratingService.add(user.id, gymId, stars, comment);
+  }
+  setRatingLoading(false);
+  setStep("done");
 };
 
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", paddingBottom: 80 }}>
 <button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 22, margin: 24, alignSelf: "flex-start" }}>←</button>
 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>
-{done ? (
+{step === "done" ? (
 <>
 <div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: "3px solid " + theme.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>✓</div>
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN EXITOSO</h2>
 <p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>{gymName}</p>
 <Badge color={theme.green}>Visita registrada</Badge>
 <Btn onClick={() => onNavigate("dashboard")} style={{ marginTop: 32, padding: "12px 32px" }}>Volver al inicio</Btn>
+</>
+) : step === "rating" ? (
+<>
+<div style={{ width: 80, height: 80, borderRadius: "50%", background: theme.gold + "22", border: "3px solid " + theme.gold, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, marginBottom: 16 }}>⭐</div>
+<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 26, letterSpacing: 2, margin: "0 0 6px" }}>¿CÓMO ESTUVO?</h2>
+<p style={{ color: theme.muted, fontSize: 13, marginBottom: 24 }}>Califica tu visita a {gymName}</p>
+<div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+  {[1, 2, 3, 4, 5].map(n => (
+    <span key={n} onClick={() => setStars(n)} style={{ fontSize: 36, cursor: "pointer", opacity: stars >= n ? 1 : 0.3, transition: "all 0.15s" }}>⭐</span>
+  ))}
+</div>
+<textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentario opcional..." rows={3}
+  style={{ width: "100%", background: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: 10, padding: "12px 14px", color: theme.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box", marginBottom: 16 }} />
+<Btn onClick={handleRate} disabled={ratingLoading} style={{ width: "100%", padding: "13px", marginBottom: 10 }}>
+  {ratingLoading ? "Enviando..." : stars > 0 ? "Enviar calificación" : "Saltar"}
+</Btn>
+{stars > 0 && (
+  <button onClick={() => setStep("done")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13, padding: 8 }}>Saltar →</button>
+)}
 </>
 ) : (
 <>
@@ -618,10 +652,126 @@ return (
 }
 
 function ProfileScreen({ onNavigate, onLogout, user }) {
-const plan = plans[0];
+const [currentPlan, setCurrentPlan] = useState("estandar");
 const [notif, setNotif] = useState(true);
+const [showPlanModal, setShowPlanModal] = useState(false);
+const [showPassModal, setShowPassModal] = useState(false);
+const [showTermsModal, setShowTermsModal] = useState(false);
+const [selectedPlan, setSelectedPlan] = useState(null);
+const [newPass, setNewPass] = useState("");
+const [confirmPass, setConfirmPass] = useState("");
+const [passError, setPassError] = useState("");
+const [toast, setToast] = useState(null);
+const [planLoading, setPlanLoading] = useState(false);
+const [passLoading, setPassLoading] = useState(false);
+
+useEffect(() => {
+  if (user?.id) userService.getPlan(user.id).then(setCurrentPlan);
+}, [user?.id]);
+
+const plan = plans.find(p => p.id === currentPlan) || plans[0];
+const showToast = (msg, color = theme.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 3000); };
+const inp = { width: "100%", background: theme.bg, border: `1px solid ${theme.cardBorder}`, borderRadius: 10, padding: "12px 14px", color: theme.text, fontSize: 14, outline: "none", boxSizing: "border-box" };
+
+const handleChangePlan = async () => {
+  if (!selectedPlan || selectedPlan === currentPlan) { setShowPlanModal(false); return; }
+  setPlanLoading(true);
+  const res = await userService.updatePlan(user.id, selectedPlan);
+  setPlanLoading(false);
+  if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
+  setCurrentPlan(selectedPlan);
+  setShowPlanModal(false);
+  showToast("✅ Plan actualizado");
+};
+
+const handleChangePassword = async () => {
+  setPassError("");
+  if (!newPass || newPass.length < 6) { setPassError("Mínimo 6 caracteres"); return; }
+  if (newPass !== confirmPass) { setPassError("Las contraseñas no coinciden"); return; }
+  setPassLoading(true);
+  const res = await authService.changePassword(newPass);
+  setPassLoading(false);
+  if (res?.error) { setPassError(res.error); return; }
+  setNewPass(""); setConfirmPass("");
+  setShowPassModal(false);
+  showToast("✅ Contraseña actualizada");
+};
+
+const modalOverlay = { position: "fixed", inset: 0, background: "#000000cc", zIndex: 100, display: "flex", alignItems: "flex-end" };
+const modalSheet = { background: theme.card, borderRadius: "24px 24px 0 0", padding: 24, width: "100%", maxWidth: 430, margin: "0 auto" };
+
 return (
 <div style={{ minHeight: "100vh", background: theme.bg, paddingBottom: 90 }}>
+{toast && <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", background: toast.color, color: "#fff", padding: "10px 20px", borderRadius: 20, fontSize: 13, fontWeight: 700, zIndex: 200, whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>{toast.msg}</div>}
+
+{showPlanModal && (
+  <div style={modalOverlay} onClick={() => setShowPlanModal(false)}>
+    <div style={modalSheet} onClick={e => e.stopPropagation()}>
+      <h3 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 22, letterSpacing: 2, margin: "0 0 16px" }}>CAMBIAR PLAN</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        {plans.map(p => (
+          <div key={p.id} onClick={() => setSelectedPlan(p.id)}
+            style={{ background: (selectedPlan || currentPlan) === p.id ? p.color + "15" : theme.bg, border: `2px solid ${(selectedPlan || currentPlan) === p.id ? p.color : theme.cardBorder}`, borderRadius: 14, padding: 16, cursor: "pointer" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <span style={{ color: p.color, fontWeight: 800, fontSize: 15 }}>{p.name}</span>
+                {currentPlan === p.id && <span style={{ color: theme.muted, fontSize: 11, marginLeft: 8 }}>• actual</span>}
+                <p style={{ color: theme.muted, fontSize: 12, margin: "4px 0 0" }}>{p.visits} visitas/mes</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ color: theme.text, fontWeight: 800, fontSize: 20 }}>${p.price}</span>
+                <p style={{ color: theme.muted, fontSize: 11, margin: 0 }}>/mes</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Btn onClick={handleChangePlan} disabled={planLoading || !selectedPlan || selectedPlan === currentPlan} style={{ width: "100%", padding: "13px" }}>
+        {planLoading ? "Guardando..." : "Confirmar cambio"}
+      </Btn>
+      <button onClick={() => setShowPlanModal(false)} style={{ width: "100%", marginTop: 8, padding: "10px", background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13 }}>Cancelar</button>
+    </div>
+  </div>
+)}
+
+{showPassModal && (
+  <div style={modalOverlay} onClick={() => setShowPassModal(false)}>
+    <div style={modalSheet} onClick={e => e.stopPropagation()}>
+      <h3 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 22, letterSpacing: 2, margin: "0 0 16px" }}>CAMBIAR CONTRASEÑA</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }}>
+        <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nueva contraseña" style={inp} />
+        <input type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Confirmar contraseña" style={inp} />
+      </div>
+      {passError && <p style={{ color: theme.accent, fontSize: 13, margin: "0 0 12px", textAlign: "center" }}>{passError}</p>}
+      <Btn onClick={handleChangePassword} disabled={passLoading} style={{ width: "100%", padding: "13px" }}>
+        {passLoading ? "Guardando..." : "Actualizar contraseña"}
+      </Btn>
+      <button onClick={() => { setShowPassModal(false); setNewPass(""); setConfirmPass(""); setPassError(""); }} style={{ width: "100%", marginTop: 8, padding: "10px", background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13 }}>Cancelar</button>
+    </div>
+  </div>
+)}
+
+{showTermsModal && (
+  <div style={modalOverlay} onClick={() => setShowTermsModal(false)}>
+    <div style={{ ...modalSheet, maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+      <h3 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 22, letterSpacing: 2, margin: "0 0 16px" }}>TÉRMINOS Y PRIVACIDAD</h3>
+      {[
+        { title: "1. Uso del servicio", text: "RedGym te ofrece acceso a una red de gimnasios mediante una membresía mensual. Al registrarte, aceptas usar el servicio de forma personal e intransferible." },
+        { title: "2. Datos personales", text: "Recopilamos nombre, correo electrónico y registro de visitas para brindarte el servicio. No compartimos tu información con terceros sin tu consentimiento." },
+        { title: "3. Check-in y visitas", text: "Cada check-in queda registrado con fecha y hora. Las visitas son personales y no pueden transferirse a otras personas." },
+        { title: "4. Membresía", text: "El cobro es mensual. Puedes cambiar o cancelar tu plan en cualquier momento. Las visitas no utilizadas no se acumulan al siguiente mes." },
+        { title: "5. Contacto", text: "Para dudas o aclaraciones escríbenos a soporte@redgym.mx" },
+      ].map((s, i) => (
+        <div key={i} style={{ marginBottom: 16 }}>
+          <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 4px" }}>{s.title}</p>
+          <p style={{ color: theme.muted, fontSize: 12, lineHeight: 1.6, margin: 0 }}>{s.text}</p>
+        </div>
+      ))}
+      <Btn onClick={() => setShowTermsModal(false)} style={{ width: "100%", padding: "13px", marginTop: 8 }}>Cerrar</Btn>
+    </div>
+  </div>
+)}
+
 <div style={{ padding: "20px 20px 0" }}>
 <Logo size={24} />
 <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "24px 0 24px" }}>
@@ -635,7 +785,7 @@ return (
 <Card style={{ marginBottom: 16, background: `linear-gradient(135deg, #0d1520, #101a24)`, border: `1px solid ${theme.blue}33` }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
 <p style={{ color: theme.text, fontWeight: 700, fontSize: 14, margin: 0 }}>Mi membresía</p>
-<Btn variant="outline" style={{ padding: "6px 14px", fontSize: 12 }}>Cambiar plan</Btn>
+<Btn variant="outline" onClick={() => { setSelectedPlan(currentPlan); setShowPlanModal(true); }} style={{ padding: "6px 14px", fontSize: 12 }}>Cambiar plan</Btn>
 </div>
 <div style={{ display: "flex", justifyContent: "space-between" }}>
 {[{ label: "Plan", value: plan.name }, { label: "Precio", value: `$${plan.price}/mes` }, { label: "Vence", value: "31 Jul" }].map((d, i) => (
@@ -650,11 +800,11 @@ return (
 <Card style={{ marginBottom: 16 }}>
 {[
 { icon: "bell", label: "Notificaciones", sub: "Recordatorios y alertas", action: <div onClick={() => setNotif(!notif)} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", background: notif ? theme.accent : theme.cardBorder, position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: notif ? 23 : 3, transition: "all 0.3s" }} /></div> },
-{ icon: "lock", label: "Cambiar contraseña", sub: "Actualiza tu acceso", action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
+{ icon: "lock", label: "Cambiar contraseña", sub: "Actualiza tu acceso", action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span>, handler: () => setShowPassModal(true) },
 { icon: "card", label: "Método de pago", sub: "MercadoPago vinculado", action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
-{ icon: "doc", label: "Términos y privacidad", sub: "Políticas de uso", action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span> },
+{ icon: "doc", label: "Términos y privacidad", sub: "Políticas de uso", action: <span style={{ color: theme.muted, fontSize: 18 }}>›</span>, handler: () => setShowTermsModal(true) },
 ].map((item, i, arr) => (
-<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < arr.length - 1 ? `1px solid ${theme.cardBorder}` : "none" }}>
+<div key={i} onClick={item.handler} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < arr.length - 1 ? `1px solid ${theme.cardBorder}` : "none", cursor: item.handler ? "pointer" : "default" }}>
 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 <span style={{ fontSize: 20 }}>{item.icon}</span>
 <div>
