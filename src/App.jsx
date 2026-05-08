@@ -1355,7 +1355,10 @@ return null;
 })();
 
 const handleLogin = (role, user) => {
-if (user) setCurrentUser(user);
+if (user) {
+  setCurrentUser(user);
+  userService.ensureProfile(user.id);
+}
 setScreen(role === "gym" ? "gym" : role === "admin" ? "admin" : "dashboard");
 };
 
@@ -1383,7 +1386,7 @@ setLoading(false);
 
 useEffect(() => {
 loadGyms();
-authService.getSession().then(user => { if (user) setCurrentUser(user); });
+authService.getSession().then(user => { if (user) { setCurrentUser(user); userService.ensureProfile(user.id); } });
 if (secretRole) setScreen(secretRole);
 }, []);
 return (

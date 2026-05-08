@@ -143,6 +143,14 @@ export const visitService = {
 }
 
 export const userService = {
+  async ensureProfile(userId) {
+    const { data } = await supabase.from('usuarios').select('id').eq('id', userId).single()
+    if (data) return { ok: true } // row already exists
+    console.log('[userService.ensureProfile] no row found, inserting for', userId)
+    const { error } = await supabase.from('usuarios').insert({ id: userId, plan: 'estandar' })
+    if (error) console.error('[userService.ensureProfile] insert error:', error.message, error)
+    return error ? { error: error.message } : { ok: true }
+  },
   async getPlan(userId) {
     const { data } = await supabase.from('usuarios').select('plan').eq('id', userId).single()
     return data?.plan || 'estandar'
@@ -151,22 +159,27 @@ export const userService = {
     const { error } = await supabase.from('usuarios')
       .update({ plan, updated_at: new Date().toISOString() })
       .eq('id', userId)
+    if (error) console.error('[userService.updatePlan] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   },
   async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
+    console.log('[userService.saveProfile] updating:', { userId, plan, edad, peso_kg, altura_cm, objetivo })
     const { error } = await supabase.from('usuarios')
       .update({ plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() })
       .eq('id', userId)
+    if (error) console.error('[userService.saveProfile] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   },
   async getProfile(userId) {
-    const { data } = await supabase.from('usuarios').select('*').eq('id', userId).single()
+    const { data, error } = await supabase.from('usuarios').select('*').eq('id', userId).single()
+    if (error) console.error('[userService.getProfile] error:', error.message, error)
     return data || null
   },
   async savePlanIA(userId, plan_ia) {
     const { error } = await supabase.from('usuarios')
       .update({ plan_ia, updated_at: new Date().toISOString() })
       .eq('id', userId)
+    if (error) console.error('[userService.savePlanIA] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   }
 }
