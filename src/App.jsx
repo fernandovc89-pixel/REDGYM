@@ -240,9 +240,26 @@ return (
 function UserDashboard({ onNavigate, onLogout, user }) {
 const plan = plans[0];
 const [visits, setVisits] = useState([]);
+const [activeCheckin, setActiveCheckin] = useState(null);
+const [checkinElapsed, setCheckinElapsed] = useState("0:00");
 useEffect(() => {
   if (user?.id) visitService.getByUser(user.id).then(setVisits);
+  try {
+    const saved = JSON.parse(localStorage.getItem("redgym-active-checkin"));
+    if (saved) setActiveCheckin(saved);
+  } catch {}
 }, [user?.id]);
+useEffect(() => {
+  if (!activeCheckin) return;
+  const entryT = new Date(activeCheckin.checkinTime);
+  const update = () => {
+    const secs = Math.floor((new Date() - entryT) / 1000);
+    setCheckinElapsed(`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
+  };
+  update();
+  const interval = setInterval(update, 1000);
+  return () => clearInterval(interval);
+}, [activeCheckin]);
 const now = new Date();
 const usedVisits = visits.filter(v => { const d = new Date(v.rawDate); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
 const pct = Math.min((usedVisits / plan.visits) * 100, 100);
@@ -254,7 +271,18 @@ return (
 </div>
 <div style={{ padding: "20px 20px 0" }}>
 <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Hola de nuevo,</p>
-<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "2px 0 20px" }}>{user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuario"}</h2>
+<h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "2px 0 16px" }}>{user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuario"}</h2>
+{activeCheckin && (
+  <Card style={{ marginBottom: 16, background: theme.accent + "15", border: `1px solid ${theme.accent}55`, padding: "14px 16px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div>
+        <p style={{ color: theme.accent, fontWeight: 800, fontSize: 13, margin: 0 }}>🏋️ Estás en {activeCheckin.gymName}</p>
+        <p style={{ color: theme.muted, fontSize: 11, margin: "3px 0 0" }}>Tiempo: <span style={{ color: theme.text, fontWeight: 700 }}>{checkinElapsed}</span></p>
+      </div>
+      <Btn onClick={() => onNavigate("checkin")} style={{ padding: "8px 16px", fontSize: 12 }}>Salir del Gym</Btn>
+    </div>
+  </Card>
+)}
 <Card style={{ background: `linear-gradient(135deg, #1a0a0c, #1e0e10)`, border: `1px solid ${theme.accent}33`, marginBottom: 16 }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
 <div><Badge color={plan.color}>Plan {plan.name}</Badge><p style={{ color: theme.muted, fontSize: 12, margin: "8px 0 0" }}>Vence el 31 de julio</p></div>
@@ -305,6 +333,8 @@ return (
 );
 }
 
+const CHECKIN_KEY = "redgym-active-checkin";
+
 function CheckinScreen({ onNavigate, gyms, user }) {
 const [step, setStep] = useState("entry"); // "entry" | "inside" | "rating" | "done"
 const [code, setCode] = useState("");
@@ -319,6 +349,19 @@ const [entryTime, setEntryTime] = useState(null);
 const [elapsed, setElapsed] = useState("0:00");
 
 const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+// Restore active checkin from localStorage on mount
+useEffect(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHECKIN_KEY));
+    if (saved) {
+      setGymName(saved.gymName);
+      setGymId(saved.gymId);
+      setEntryTime(new Date(saved.checkinTime));
+      setStep("inside");
+    }
+  } catch {}
+}, []);
 
 useEffect(() => {
   if (step !== "inside" || !entryTime) return;
@@ -339,10 +382,12 @@ const handleCheckin = async () => {
     if (res.error) { setError(res.error); setSaving(false); return; }
   }
   setSaving(false);
+  const checkinTime = new Date().toISOString();
+  localStorage.setItem(CHECKIN_KEY, JSON.stringify({ gymName: gym.name, gymId: gym.id, checkinTime }));
   setGymName(gym.name);
   setGymId(gym.id);
   setError("");
-  setEntryTime(new Date());
+  setEntryTime(new Date(checkinTime));
   setStep("inside");
 };
 
@@ -352,6 +397,7 @@ const handleRate = async () => {
     await ratingService.add(user.id, gymId, stars, comment);
   }
   setRatingLoading(false);
+  localStorage.removeItem(CHECKIN_KEY);
   setStep("done");
 };
 
@@ -396,7 +442,7 @@ return (
   <p style={{ color: theme.muted, fontSize: 11, margin: "0 0 4px", letterSpacing: 1 }}>TIEMPO EN EL GYM</p>
   <p style={{ color: theme.accent, fontSize: 48, fontWeight: 900, fontFamily: "'Bebas Neue', cursive", margin: 0, letterSpacing: 4 }}>{elapsed}</p>
 </div>
-<Btn onClick={() => setStep("rating")} style={{ width: "100%", padding: "14px", marginBottom: 12 }}>Salir del Gym</Btn>
+<Btn onClick={() => { localStorage.removeItem(CHECKIN_KEY); setStep("rating"); }} style={{ width: "100%", padding: "14px", marginBottom: 12 }}>Salir del Gym</Btn>
 <button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13, padding: 8 }}>Ir al inicio →</button>
 </>
 ) : (
@@ -715,6 +761,9 @@ const [passLoading, setPassLoading] = useState(false);
 const [profile, setProfile] = useState(null);
 const [planIA, setPlanIA] = useState(null);
 const [generatingPlan, setGeneratingPlan] = useState(false);
+const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+const [editProfileForm, setEditProfileForm] = useState({ edad: "", pesoKg: "", alturaCm: "", objetivo: OBJETIVOS[0] });
+const [editProfileLoading, setEditProfileLoading] = useState(false);
 
 useEffect(() => {
   if (user?.id) {
@@ -754,13 +803,16 @@ const handleChangePassword = async () => {
 };
 
 const handleGeneratePlan = async () => {
-  if (!profile?.edad) { showToast("Completa tu perfil: edad, peso y altura", "#f4a261"); return; }
+  let p = profile;
+  if (!p?.edad && user?.id) p = await userService.getProfile(user.id);
+  if (p && !profile) setProfile(p);
+  if (!p?.edad) { setEditProfileForm({ edad: "", pesoKg: "", alturaCm: "", objetivo: OBJETIVOS[0] }); setShowEditProfileModal(true); return; }
   setGeneratingPlan(true);
   try {
     const res = await fetch('/api/generate-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ edad: profile.edad, peso_kg: profile.peso_kg, altura_cm: profile.altura_cm, objetivo: profile.objetivo })
+      body: JSON.stringify({ edad: p.edad, peso_kg: p.peso_kg, altura_cm: p.altura_cm, objetivo: p.objetivo || OBJETIVOS[0] })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -771,6 +823,23 @@ const handleGeneratePlan = async () => {
     showToast("❌ " + e.message, "#ff4444");
   }
   setGeneratingPlan(false);
+};
+
+const handleSaveEditProfile = async () => {
+  setEditProfileLoading(true);
+  const updated = {
+    plan: currentPlan,
+    edad: editProfileForm.edad ? Number(editProfileForm.edad) : null,
+    peso_kg: editProfileForm.pesoKg ? Number(editProfileForm.pesoKg) : null,
+    altura_cm: editProfileForm.alturaCm ? Number(editProfileForm.alturaCm) : null,
+    objetivo: editProfileForm.objetivo
+  };
+  const res = await userService.saveProfile(user.id, updated);
+  setEditProfileLoading(false);
+  if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
+  setProfile(prev => ({ ...(prev || {}), ...updated }));
+  setShowEditProfileModal(false);
+  showToast("✅ Perfil actualizado");
 };
 
 const modalOverlay = { position: "fixed", inset: 0, background: "#000000cc", zIndex: 100, display: "flex", alignItems: "flex-end" };
@@ -823,6 +892,28 @@ return (
         {passLoading ? "Guardando..." : "Actualizar contraseña"}
       </Btn>
       <button onClick={() => { setShowPassModal(false); setNewPass(""); setConfirmPass(""); setPassError(""); }} style={{ width: "100%", marginTop: 8, padding: "10px", background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13 }}>Cancelar</button>
+    </div>
+  </div>
+)}
+
+{showEditProfileModal && (
+  <div style={modalOverlay} onClick={() => setShowEditProfileModal(false)}>
+    <div style={modalSheet} onClick={e => e.stopPropagation()}>
+      <h3 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 22, letterSpacing: 2, margin: "0 0 16px" }}>EDITAR PERFIL</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <input type="number" value={editProfileForm.edad} onChange={e => setEditProfileForm(f => ({ ...f, edad: e.target.value }))} placeholder="Edad" min="10" max="99" style={{ ...inp, padding: "12px 10px" }} />
+          <input type="number" value={editProfileForm.pesoKg} onChange={e => setEditProfileForm(f => ({ ...f, pesoKg: e.target.value }))} placeholder="Peso kg" min="30" max="300" style={{ ...inp, padding: "12px 10px" }} />
+          <input type="number" value={editProfileForm.alturaCm} onChange={e => setEditProfileForm(f => ({ ...f, alturaCm: e.target.value }))} placeholder="Alt cm" min="100" max="250" style={{ ...inp, padding: "12px 10px" }} />
+        </div>
+        <select value={editProfileForm.objetivo} onChange={e => setEditProfileForm(f => ({ ...f, objetivo: e.target.value }))} style={{ ...inp, appearance: "none" }}>
+          {OBJETIVOS.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </div>
+      <Btn onClick={handleSaveEditProfile} disabled={editProfileLoading} style={{ width: "100%", padding: "13px" }}>
+        {editProfileLoading ? "Guardando..." : "Guardar cambios"}
+      </Btn>
+      <button onClick={() => setShowEditProfileModal(false)} style={{ width: "100%", marginTop: 8, padding: "10px", background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13 }}>Cancelar</button>
     </div>
   </div>
 )}
@@ -892,9 +983,13 @@ return (
 </div>
 ))}
 </Card>
-<p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>Mi Plan de Entrenamiento</p>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 12px" }}>
+  <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: 0 }}>Mi Plan de Entrenamiento</p>
+  <button onClick={() => { setEditProfileForm({ edad: profile?.edad || "", pesoKg: profile?.peso_kg || "", alturaCm: profile?.altura_cm || "", objetivo: profile?.objetivo || OBJETIVOS[0] }); setShowEditProfileModal(true); }}
+    style={{ background: "none", border: `1px solid ${theme.cardBorder}`, borderRadius: 8, padding: "4px 10px", color: theme.muted, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>✏️ Editar perfil</button>
+</div>
 {profile?.objetivo && (
-  <p style={{ color: theme.muted, fontSize: 12, margin: "-6px 0 12px" }}>Objetivo: <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span></p>
+  <p style={{ color: theme.muted, fontSize: 12, margin: "-4px 0 12px" }}>Objetivo: <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span>{profile?.edad ? <span> · {profile.edad} años · {profile.peso_kg}kg · {profile.altura_cm}cm</span> : null}</p>
 )}
 <Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
   {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
