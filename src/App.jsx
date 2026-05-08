@@ -148,11 +148,17 @@ return (
 );
 }
 
+const OBJETIVOS = ["Perder peso", "Ganar músculo", "Mejorar resistencia", "Mantenimiento"];
+
 function RegisterScreen({ onRegister, onBack }) {
 const [step, setStep] = useState(1);
 const [name, setName] = useState("");
 const [email, setEmail] = useState("");
 const [pass, setPass] = useState("");
+const [edad, setEdad] = useState("");
+const [pesoKg, setPesoKg] = useState("");
+const [alturaCm, setAlturaCm] = useState("");
+const [objetivo, setObjetivo] = useState(OBJETIVOS[0]);
 const [selectedPlan, setSelectedPlan] = useState(null);
 const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
@@ -163,6 +169,15 @@ if (!selectedPlan || !name || !email || !pass) return;
 setLoading(true); setError("");
 const res = await authService.register(name, email, pass);
 if (res.error) { setError(res.error); setLoading(false); return; }
+if (res.user?.id) {
+  await userService.saveProfile(res.user.id, {
+    plan: selectedPlan,
+    edad: edad ? Number(edad) : null,
+    peso_kg: pesoKg ? Number(pesoKg) : null,
+    altura_cm: alturaCm ? Number(alturaCm) : null,
+    objetivo
+  });
+}
 onRegister(selectedPlan, res.user);
 setLoading(false);
 };
@@ -177,11 +192,19 @@ return (
 {step === 1 ? (
 <>
 <h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2, margin: "0 0 4px" }}>CREAR CUENTA</h2>
-<p style={{ color: theme.muted, fontSize: 13, marginBottom: 24 }}>Paso 1 de 2 — Datos personales</p>
+<p style={{ color: theme.muted, fontSize: 13, marginBottom: 20 }}>Paso 1 de 2 — Datos personales</p>
 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-<input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" style={inp} />
-<input value={email} onChange={e => setEmail(e.target.value)} placeholder="Correo electrónico" style={inp} />
-<input value={pass} onChange={e => setPass(e.target.value)} type="password" placeholder="Contraseña" style={inp} />
+  <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" style={inp} />
+  <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Correo electrónico" style={inp} />
+  <input value={pass} onChange={e => setPass(e.target.value)} type="password" placeholder="Contraseña" style={inp} />
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+    <input value={edad} onChange={e => setEdad(e.target.value)} placeholder="Edad" type="number" min="10" max="99" style={{ ...inp, padding: "12px 10px" }} />
+    <input value={pesoKg} onChange={e => setPesoKg(e.target.value)} placeholder="Peso kg" type="number" min="30" max="300" style={{ ...inp, padding: "12px 10px" }} />
+    <input value={alturaCm} onChange={e => setAlturaCm(e.target.value)} placeholder="Alt cm" type="number" min="100" max="250" style={{ ...inp, padding: "12px 10px" }} />
+  </div>
+  <select value={objetivo} onChange={e => setObjetivo(e.target.value)} style={{ ...inp, appearance: "none", backgroundImage: "none" }}>
+    {OBJETIVOS.map(o => <option key={o} value={o}>{o}</option>)}
+  </select>
 </div>
 <Btn onClick={() => setStep(2)} style={{ width: "100%", padding: "14px", marginTop: 20 }} disabled={!name || !email || !pass}>Continuar →</Btn>
 </>
@@ -283,7 +306,7 @@ return (
 }
 
 function CheckinScreen({ onNavigate, gyms, user }) {
-const [step, setStep] = useState("entry"); // "entry" | "rating" | "done"
+const [step, setStep] = useState("entry"); // "entry" | "inside" | "rating" | "done"
 const [code, setCode] = useState("");
 const [error, setError] = useState("");
 const [gymName, setGymName] = useState("");
@@ -292,8 +315,19 @@ const [saving, setSaving] = useState(false);
 const [stars, setStars] = useState(0);
 const [comment, setComment] = useState("");
 const [ratingLoading, setRatingLoading] = useState(false);
+const [entryTime, setEntryTime] = useState(null);
+const [elapsed, setElapsed] = useState("0:00");
 
 const isUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+useEffect(() => {
+  if (step !== "inside" || !entryTime) return;
+  const interval = setInterval(() => {
+    const secs = Math.floor((new Date() - entryTime) / 1000);
+    setElapsed(`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
+  }, 1000);
+  return () => clearInterval(interval);
+}, [step, entryTime]);
 
 const handleCheckin = async () => {
   if (!code.trim()) { setError("Ingresa el codigo del gimnasio"); return; }
@@ -308,7 +342,8 @@ const handleCheckin = async () => {
   setGymName(gym.name);
   setGymId(gym.id);
   setError("");
-  setStep("rating");
+  setEntryTime(new Date());
+  setStep("inside");
 };
 
 const handleRate = async () => {
@@ -327,9 +362,9 @@ return (
 {step === "done" ? (
 <>
 <div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.green + "22", border: "3px solid " + theme.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 20 }}>✓</div>
-<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>CHECK-IN EXITOSO</h2>
+<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 32, letterSpacing: 2, margin: "0 0 8px" }}>¡HASTA PRONTO!</h2>
 <p style={{ color: theme.muted, fontSize: 14, marginBottom: 8 }}>{gymName}</p>
-<Badge color={theme.green}>Visita registrada</Badge>
+<Badge color={theme.green}>Visita completada</Badge>
 <Btn onClick={() => onNavigate("dashboard")} style={{ marginTop: 32, padding: "12px 32px" }}>Volver al inicio</Btn>
 </>
 ) : step === "rating" ? (
@@ -350,6 +385,19 @@ return (
 {stars > 0 && (
   <button onClick={() => setStep("done")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13, padding: 8 }}>Saltar →</button>
 )}
+</>
+) : step === "inside" ? (
+<>
+<div style={{ width: 100, height: 100, borderRadius: "50%", background: theme.accent + "22", border: "3px solid " + theme.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, marginBottom: 20 }}>🏋️</div>
+<h2 style={{ color: theme.text, fontFamily: "'Bebas Neue', cursive", fontSize: 30, letterSpacing: 2, margin: "0 0 6px" }}>DENTRO DEL GYM</h2>
+<p style={{ color: theme.muted, fontSize: 14, marginBottom: 10 }}>{gymName}</p>
+<Badge color={theme.green}>Check-in registrado</Badge>
+<div style={{ marginTop: 24, padding: "20px 40px", background: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: 20, textAlign: "center", marginBottom: 32 }}>
+  <p style={{ color: theme.muted, fontSize: 11, margin: "0 0 4px", letterSpacing: 1 }}>TIEMPO EN EL GYM</p>
+  <p style={{ color: theme.accent, fontSize: 48, fontWeight: 900, fontFamily: "'Bebas Neue', cursive", margin: 0, letterSpacing: 4 }}>{elapsed}</p>
+</div>
+<Btn onClick={() => setStep("rating")} style={{ width: "100%", padding: "14px", marginBottom: 12 }}>Salir del Gym</Btn>
+<button onClick={() => onNavigate("dashboard")} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 13, padding: 8 }}>Ir al inicio →</button>
 </>
 ) : (
 <>
@@ -664,9 +712,17 @@ const [passError, setPassError] = useState("");
 const [toast, setToast] = useState(null);
 const [planLoading, setPlanLoading] = useState(false);
 const [passLoading, setPassLoading] = useState(false);
+const [profile, setProfile] = useState(null);
+const [planIA, setPlanIA] = useState(null);
+const [generatingPlan, setGeneratingPlan] = useState(false);
 
 useEffect(() => {
-  if (user?.id) userService.getPlan(user.id).then(setCurrentPlan);
+  if (user?.id) {
+    userService.getPlan(user.id).then(setCurrentPlan);
+    userService.getProfile(user.id).then(p => {
+      if (p) { setProfile(p); if (p.plan_ia) setPlanIA(p.plan_ia); }
+    });
+  }
 }, [user?.id]);
 
 const plan = plans.find(p => p.id === currentPlan) || plans[0];
@@ -695,6 +751,26 @@ const handleChangePassword = async () => {
   setNewPass(""); setConfirmPass("");
   setShowPassModal(false);
   showToast("✅ Contraseña actualizada");
+};
+
+const handleGeneratePlan = async () => {
+  if (!profile?.edad) { showToast("Completa tu perfil: edad, peso y altura", "#f4a261"); return; }
+  setGeneratingPlan(true);
+  try {
+    const res = await fetch('/api/generate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ edad: profile.edad, peso_kg: profile.peso_kg, altura_cm: profile.altura_cm, objetivo: profile.objetivo })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setPlanIA(data.plan);
+    await userService.savePlanIA(user.id, data.plan);
+    showToast("✅ Plan generado");
+  } catch (e) {
+    showToast("❌ " + e.message, "#ff4444");
+  }
+  setGeneratingPlan(false);
 };
 
 const modalOverlay = { position: "fixed", inset: 0, background: "#000000cc", zIndex: 100, display: "flex", alignItems: "flex-end" };
@@ -816,16 +892,42 @@ return (
 </div>
 ))}
 </Card>
-<p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>Mi actividad</p>
-<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-{[{ label: "Visitas totales", value: "8", icon: "gym️", color: theme.green }, { label: "Gyms visitados", value: "3", icon: "pin", color: theme.blue }, { label: "Meses activo", value: "1", icon: "cal", color: theme.gold }, { label: "Visitas este mes", value: "5/12", icon: "chart", color: theme.accent }].map((s, i) => (
-<Card key={i} style={{ padding: 14 }}>
-<div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-<p style={{ color: s.color, fontWeight: 800, fontSize: 18, margin: 0 }}>{s.value}</p>
-<p style={{ color: theme.muted, fontSize: 11, margin: "2px 0 0" }}>{s.label}</p>
-</Card>
-))}
-</div>
+<p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>Mi Plan de Entrenamiento</p>
+{profile?.objetivo && (
+  <p style={{ color: theme.muted, fontSize: 12, margin: "-6px 0 12px" }}>Objetivo: <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span></p>
+)}
+<Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
+  {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
+</Btn>
+{planIA ? (
+  <Card style={{ marginBottom: 16 }}>
+    <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 14px", lineHeight: 1.6 }}>{planIA.resumen}</p>
+    {planIA.dias?.map((d, i) => (
+      <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < planIA.dias.length - 1 ? `1px solid ${theme.cardBorder}` : "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <span style={{ color: theme.text, fontWeight: 700, fontSize: 12 }}>{d.dia}</span>
+          <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.blue}>{d.enfoque}</Badge>
+        </div>
+        {d.ejercicios?.map((e, j) => (
+          <p key={j} style={{ color: theme.muted, fontSize: 11, margin: "2px 0", paddingLeft: 8 }}>• {e}</p>
+        ))}
+      </div>
+    ))}
+    {planIA.consejos?.length > 0 && (
+      <div style={{ marginTop: 12, padding: "12px", background: theme.bg, borderRadius: 10 }}>
+        <p style={{ color: theme.text, fontWeight: 700, fontSize: 12, margin: "0 0 8px" }}>Consejos</p>
+        {planIA.consejos.map((c, i) => (
+          <p key={i} style={{ color: theme.muted, fontSize: 11, margin: "4px 0" }}>💡 {c}</p>
+        ))}
+      </div>
+    )}
+  </Card>
+) : (
+  <Card style={{ marginBottom: 16, textAlign: "center", padding: "24px 20px", border: `1px dashed ${theme.cardBorder}` }}>
+    <p style={{ fontSize: 32, margin: "0 0 8px" }}>🤖</p>
+    <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Genera tu plan personalizado con IA basado en tu perfil</p>
+  </Card>
+)}
 <button onClick={onLogout} style={{ width: "100%", padding: "14px", border: `1px solid ${theme.accent}44`, borderRadius: 10, background: "transparent", color: theme.accent, fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>Cerrar sesión</button>
 </div>
 <BottomNav active="profile" onNavigate={onNavigate} />

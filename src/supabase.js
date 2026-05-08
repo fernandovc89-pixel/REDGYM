@@ -150,6 +150,18 @@ export const userService = {
   async updatePlan(userId, plan) {
     const { error } = await supabase.from('usuarios').upsert({ id: userId, plan })
     return error ? { error: error.message } : { ok: true }
+  },
+  async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
+    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan, edad, peso_kg, altura_cm, objetivo })
+    return error ? { error: error.message } : { ok: true }
+  },
+  async getProfile(userId) {
+    const { data } = await supabase.from('usuarios').select('*').eq('id', userId).single()
+    return data || null
+  },
+  async savePlanIA(userId, plan_ia) {
+    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan_ia })
+    return error ? { error: error.message } : { ok: true }
   }
 }
 
