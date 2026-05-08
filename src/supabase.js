@@ -148,14 +148,15 @@ export const userService = {
     return data?.plan || 'estandar'
   },
   async updatePlan(userId, plan) {
-    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan })
+    const { error } = await supabase.from('usuarios')
+      .update({ plan, updated_at: new Date().toISOString() })
+      .eq('id', userId)
     return error ? { error: error.message } : { ok: true }
   },
   async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
-    const { error } = await supabase.from('usuarios').upsert(
-      { id: userId, plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() },
-      { onConflict: 'id' }
-    )
+    const { error } = await supabase.from('usuarios')
+      .update({ plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() })
+      .eq('id', userId)
     return error ? { error: error.message } : { ok: true }
   },
   async getProfile(userId) {
@@ -163,7 +164,9 @@ export const userService = {
     return data || null
   },
   async savePlanIA(userId, plan_ia) {
-    const { error } = await supabase.from('usuarios').upsert({ id: userId, plan_ia })
+    const { error } = await supabase.from('usuarios')
+      .update({ plan_ia, updated_at: new Date().toISOString() })
+      .eq('id', userId)
     return error ? { error: error.message } : { ok: true }
   }
 }
