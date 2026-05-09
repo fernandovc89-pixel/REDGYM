@@ -752,7 +752,7 @@ const [gifUrl, setGifUrl] = useState(gifCache[name] !== undefined ? gifCache[nam
 const [loading, setLoading] = useState(gifCache[name] === undefined);
 useEffect(() => {
   if (gifCache[name] !== undefined) { setGifUrl(gifCache[name]); setLoading(false); return; }
-  fetch(`/api/exercise-image?name=${encodeURIComponent(name)}`)
+  fetch(`/api/get-exercise-image?name=${encodeURIComponent(name)}`)
     .then(r => r.json())
     .then(d => { gifCache[name] = d.gifUrl || null; setGifUrl(d.gifUrl || null); setLoading(false); })
     .catch(() => { gifCache[name] = null; setLoading(false); });
