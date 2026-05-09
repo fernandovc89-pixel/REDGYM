@@ -1038,13 +1038,22 @@ return (
           <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.blue}>{d.enfoque}</Badge>
         </div>
         {d.enfoque !== "Descanso" && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0 4px" }}>
-            {d.ejercicios?.map((e, j) => <ExerciseImage key={j} name={e} />)}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "8px 0 4px" }}>
+            {d.ejercicios?.map((e, j) => {
+              const exName = typeof e === "string" ? e : e.name;
+              const exLabel = typeof e === "string" ? e : e.label;
+              return (
+                <div key={j} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ExerciseImage name={exName} />
+                  <div>
+                    <p style={{ color: theme.text, fontSize: 12, fontWeight: 600, margin: 0 }}>{exLabel}</p>
+                    <p style={{ color: theme.muted, fontSize: 10, margin: "2px 0 0" }}>{exName}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-        {d.ejercicios?.map((e, j) => (
-          <p key={j} style={{ color: theme.muted, fontSize: 11, margin: "2px 0", paddingLeft: 4 }}>• {e}</p>
-        ))}
       </div>
     ))}
     {planIA.consejos?.length > 0 && (

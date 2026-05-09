@@ -31,26 +31,30 @@ module.exports = async function handler(req, res) {
         model: 'llama-3.1-8b-instant',
         max_tokens: 1500,
         messages: [
-          { role: 'system', content: 'Eres un entrenador personal experto. Responde ÚNICAMENTE con JSON válido, sin texto adicional, sin markdown.' },
-          { role: 'user', content: `Genera un plan de entrenamiento semanal personalizado en español para:
-- Edad: ${edad} años
-- Peso: ${peso_kg} kg
-- Altura: ${altura_cm} cm
-- Objetivo: ${objetivo}
+          { role: 'system', content: 'You are an expert personal trainer. Reply ONLY with valid JSON, no extra text, no markdown code fences.' },
+          { role: 'user', content: `Generate a personalized weekly training plan for:
+- Age: ${edad} years
+- Weight: ${peso_kg} kg
+- Height: ${altura_cm} cm
+- Goal: ${objetivo}
 
-Responde ÚNICAMENTE con este JSON:
+CRITICAL: Each exercise MUST be a JSON object with two fields:
+- "name": the EXACT English exercise name as it appears in ExerciseDB. Only use names from this approved list: squat, push up, deadlift, pull up, plank, lunge, bench press, barbell row, shoulder press, overhead press, bicep curl, tricep dip, tricep extension, leg press, calf raise, crunch, mountain climber, lat pulldown, dumbbell row, leg curl, leg extension, hip thrust, glute bridge, lateral raise, front raise, incline bench press, dips, jump rope, burpee, run, step up
+- "label": the Spanish name for this exercise
+
+Reply ONLY with this JSON (resumen and enfoque in Spanish, exercise labels in Spanish, exercise names in English from the approved list):
 {
-  "resumen": "descripción breve motivacional del plan (1-2 oraciones)",
+  "resumen": "descripción motivacional breve del plan en español (1-2 oraciones)",
   "dias": [
-    { "dia": "Lunes", "enfoque": "nombre del tipo de entreno", "ejercicios": ["ej1", "ej2", "ej3", "ej4"] },
-    { "dia": "Martes", "enfoque": "...", "ejercicios": ["..."] },
-    { "dia": "Miércoles", "enfoque": "...", "ejercicios": ["..."] },
-    { "dia": "Jueves", "enfoque": "...", "ejercicios": ["..."] },
-    { "dia": "Viernes", "enfoque": "...", "ejercicios": ["..."] },
-    { "dia": "Sábado", "enfoque": "...", "ejercicios": ["..."] },
-    { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": ["Descanso activo", "Stretching 15 min"] }
+    { "dia": "Lunes", "enfoque": "tipo de entreno en español", "ejercicios": [{"name":"squat","label":"Sentadillas"},{"name":"push up","label":"Flexiones"},{"name":"plank","label":"Plancha"},{"name":"lunge","label":"Zancadas"}] },
+    { "dia": "Martes", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
+    { "dia": "Miércoles", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
+    { "dia": "Jueves", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
+    { "dia": "Viernes", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
+    { "dia": "Sábado", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
+    { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": [{"name":"plank","label":"Plancha suave"},{"name":"run","label":"Caminata ligera"}] }
   ],
-  "consejos": ["consejo 1", "consejo 2", "consejo 3"]
+  "consejos": ["consejo 1 en español", "consejo 2 en español", "consejo 3 en español"]
 }` }
         ]
       })
