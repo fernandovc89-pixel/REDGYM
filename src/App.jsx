@@ -1058,6 +1058,11 @@ return (
                     <div style={{ padding: "6px 8px 8px" }}>
                       <p style={{ color: theme.text, fontSize: 11, fontWeight: 700, margin: 0, lineHeight: 1.3 }}>{exLabel}</p>
                       <p style={{ color: theme.muted, fontSize: 9, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.3px" }}>{exName}</p>
+                      {(e.sets || e.reps) && (
+                        <p style={{ color: theme.accent, fontSize: 10, fontWeight: 700, margin: "4px 0 0" }}>
+                          {e.sets} series × {e.reps}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );

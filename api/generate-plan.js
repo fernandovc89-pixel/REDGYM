@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        max_tokens: 1500,
+        max_tokens: 2000,
         messages: [
           { role: 'system', content: 'You are an expert personal trainer. Reply ONLY with valid JSON, no extra text, no markdown code fences.' },
           { role: 'user', content: `Generate a personalized weekly training plan for:
@@ -38,21 +38,23 @@ module.exports = async function handler(req, res) {
 - Height: ${altura_cm} cm
 - Goal: ${objetivo}
 
-CRITICAL: Each exercise MUST be a JSON object with two fields:
-- "name": the EXACT English exercise name as it appears in ExerciseDB. Only use names from this approved list: squat, push up, deadlift, pull up, plank, lunge, bench press, barbell row, shoulder press, overhead press, bicep curl, tricep dip, tricep extension, leg press, calf raise, crunch, mountain climber, lat pulldown, dumbbell row, leg curl, leg extension, hip thrust, glute bridge, lateral raise, front raise, incline bench press, dips, jump rope, burpee, run, step up
+CRITICAL: Each exercise MUST be a JSON object with four fields:
+- "name": the EXACT English exercise name from this approved list: squat, push up, deadlift, pull up, plank, lunge, bench press, barbell row, shoulder press, overhead press, bicep curl, tricep dip, tricep extension, leg press, calf raise, crunch, mountain climber, lat pulldown, dumbbell row, leg curl, leg extension, hip thrust, glute bridge, lateral raise, front raise, incline bench press, dips, jump rope, burpee, run, step up
 - "label": the Spanish name for this exercise
+- "sets": number of sets (integer, e.g. 3)
+- "reps": reps per set as a string — use a number like "12", a range like "8-12", or time like "30 seconds" or "1 minute"
 
 Reply ONLY with this JSON (resumen and enfoque in Spanish, exercise labels in Spanish, exercise names in English from the approved list):
 {
   "resumen": "descripción motivacional breve del plan en español (1-2 oraciones)",
   "dias": [
-    { "dia": "Lunes", "enfoque": "tipo de entreno en español", "ejercicios": [{"name":"squat","label":"Sentadillas"},{"name":"push up","label":"Flexiones"},{"name":"plank","label":"Plancha"},{"name":"lunge","label":"Zancadas"}] },
-    { "dia": "Martes", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
-    { "dia": "Miércoles", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
-    { "dia": "Jueves", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
-    { "dia": "Viernes", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
-    { "dia": "Sábado", "enfoque": "...", "ejercicios": [{"name":"...","label":"..."}] },
-    { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": [{"name":"plank","label":"Plancha suave"},{"name":"run","label":"Caminata ligera"}] }
+    { "dia": "Lunes", "enfoque": "tipo de entreno en español", "ejercicios": [{"name":"squat","label":"Sentadillas","sets":3,"reps":"12"},{"name":"push up","label":"Flexiones","sets":3,"reps":"15"},{"name":"plank","label":"Plancha","sets":3,"reps":"30 seconds"},{"name":"lunge","label":"Zancadas","sets":3,"reps":"10"}] },
+    { "dia": "Martes", "enfoque": "...", "ejercicios": [{"name":"...","label":"...","sets":3,"reps":"12"}] },
+    { "dia": "Miércoles", "enfoque": "...", "ejercicios": [{"name":"...","label":"...","sets":3,"reps":"12"}] },
+    { "dia": "Jueves", "enfoque": "...", "ejercicios": [{"name":"...","label":"...","sets":3,"reps":"12"}] },
+    { "dia": "Viernes", "enfoque": "...", "ejercicios": [{"name":"...","label":"...","sets":3,"reps":"12"}] },
+    { "dia": "Sábado", "enfoque": "...", "ejercicios": [{"name":"...","label":"...","sets":3,"reps":"12"}] },
+    { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": [{"name":"plank","label":"Plancha suave","sets":2,"reps":"30 seconds"},{"name":"run","label":"Caminata ligera","sets":1,"reps":"20 minutes"}] }
   ],
   "consejos": ["consejo 1 en español", "consejo 2 en español", "consejo 3 en español"]
 }` }
