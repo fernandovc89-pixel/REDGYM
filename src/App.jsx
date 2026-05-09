@@ -745,6 +745,24 @@ return (
 );
 }
 
+const gifCache = {};
+
+function ExerciseImage({ name }) {
+const [gifUrl, setGifUrl] = useState(gifCache[name] !== undefined ? gifCache[name] : undefined);
+const [loading, setLoading] = useState(gifCache[name] === undefined);
+useEffect(() => {
+  if (gifCache[name] !== undefined) { setGifUrl(gifCache[name]); setLoading(false); return; }
+  fetch(`/api/exercise-image?name=${encodeURIComponent(name)}`)
+    .then(r => r.json())
+    .then(d => { gifCache[name] = d.gifUrl || null; setGifUrl(d.gifUrl || null); setLoading(false); })
+    .catch(() => { gifCache[name] = null; setLoading(false); });
+}, [name]);
+const box = { width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: theme.cardBorder, display: "flex", alignItems: "center", justifyContent: "center" };
+if (loading) return <div style={box}><span style={{ fontSize: 18, opacity: 0.4 }}>⏳</span></div>;
+if (!gifUrl) return <div style={box}><span style={{ fontSize: 22 }}>🏋️</span></div>;
+return <img src={gifUrl} alt={name} style={{ ...box, objectFit: "cover" }} />;
+}
+
 function ProfileScreen({ onNavigate, onLogout, user }) {
 const [currentPlan, setCurrentPlan] = useState("estandar");
 const [notif, setNotif] = useState(true);
@@ -1019,8 +1037,13 @@ return (
           <span style={{ color: theme.text, fontWeight: 700, fontSize: 12 }}>{d.dia}</span>
           <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.blue}>{d.enfoque}</Badge>
         </div>
+        {d.enfoque !== "Descanso" && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0 4px" }}>
+            {d.ejercicios?.map((e, j) => <ExerciseImage key={j} name={e} />)}
+          </div>
+        )}
         {d.ejercicios?.map((e, j) => (
-          <p key={j} style={{ color: theme.muted, fontSize: 11, margin: "2px 0", paddingLeft: 8 }}>• {e}</p>
+          <p key={j} style={{ color: theme.muted, fontSize: 11, margin: "2px 0", paddingLeft: 4 }}>• {e}</p>
         ))}
       </div>
     ))}
