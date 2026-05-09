@@ -1,95 +1,51 @@
-const TRANSLATIONS = {
-  // Lower body
-  "sentadilla": "squat", "sentadillas": "squat", "squat": "squat",
-  "zancada": "lunge", "zancadas": "lunge",
-  "peso muerto": "deadlift",
-  "prensa": "leg press", "prensa de piernas": "leg press",
-  "extensiones de cuádriceps": "leg extension", "extensión de cuádriceps": "leg extension",
-  "curl de femoral": "leg curl", "curl femoral": "leg curl",
-  "elevación de talones": "calf raise", "elevaciones de talones": "calf raise",
-  "hip thrust": "hip thrust",
-  "glúteo": "glute bridge",
+// Hardcoded map: exact AI-generated exercise names → confirmed Wger CDN image URLs.
+// No external API calls — images load instantly and reliably.
+const EXERCISE_IMAGES = {
+  // Lower body compound
+  "squat":               "https://wger.de/media/exercise-images/1801/60043328-1cfb-4289-9865-aaf64d5aaa28.jpg",
+  "deadlift":            "https://wger.de/media/exercise-images/184/1709c405-620a-4d07-9658-fade2b66a2df.jpeg",
+  "lunge":               "https://wger.de/media/exercise-images/984/5c7ffe68-e7b2-47f3-a22a-f9cc28640432.png",
+  "leg press":           "https://wger.de/media/exercise-images/371/d2136f96-3a43-4d4c-9944-1919c4ca1ce1.webp",
+  "calf raise":          "https://wger.de/media/exercise-images/1243/53d4fabe-c994-4907-873f-8d82813a9832.png",
+  "hip thrust":          "https://wger.de/media/exercise-images/1642/a81ad922-caf5-47f8-99b4-640cb0717436.webp",
+  "glute bridge":        "https://wger.de/media/exercise-images/1642/a81ad922-caf5-47f8-99b4-640cb0717436.webp",
+  "leg curl":            "https://wger.de/media/exercise-images/154/lying-leg-curl-machine-large-1.png",
+  "leg extension":       "https://wger.de/media/exercise-images/851/4d621b17-f6cb-4107-97c0-9f44e9a2dbc6.webp",
 
   // Upper body push
-  "flexiones": "push up", "flexión": "push up",
-  "press de banca": "bench press", "press banca": "bench press",
-  "press de hombros": "shoulder press", "press militar": "overhead press",
-  "press inclinado": "incline bench press",
-  "fondos": "dips", "fondos en paralelas": "dips",
-  "elevaciones laterales": "lateral raise",
-  "elevaciones frontales": "front raise",
+  "push up":             "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+  "bench press":         "https://wger.de/media/exercise-images/192/Bench-press-1.png",
+  "incline bench press": "https://wger.de/media/exercise-images/41/Incline-bench-press-1.png",
+  "shoulder press":      "https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-1.png",
+  "overhead press":      "https://wger.de/media/exercise-images/1893/7dbad19e-0616-41fd-9d7d-3e21649c0eea.png",
+  "dips":                "https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
+  "tricep dip":          "https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
+  "tricep extension":    "https://wger.de/media/exercise-images/50/695ced5c-9961-4076-add2-cb250d01089e.png",
+  "lateral raise":       "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
+  "front raise":         "https://wger.de/media/exercise-images/256/b7def5bc-2352-499b-b9e5-fff741003831.png",
 
   // Upper body pull
-  "dominadas": "pull up", "dominada": "pull up",
-  "jalón al pecho": "lat pulldown", "jalón": "lat pulldown",
-  "remo con barra": "barbell row", "remo": "row",
-  "remo con mancuerna": "dumbbell row",
-  "curl de bíceps": "bicep curl", "curl bíceps": "bicep curl", "curl biceps": "bicep curl",
-  "extensión de tríceps": "tricep extension", "extensión tríceps": "tricep extension",
+  "pull up":             "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+  "barbell row":         "https://wger.de/media/exercise-images/109/Barbell-rear-delt-row-1.png",
+  "dumbbell row":        "https://wger.de/media/exercise-images/1186/1987a039-cf35-437e-bbdc-40c53dd7d053.jpg",
+  "lat pulldown":        "https://wger.de/media/exercise-images/158/02e8a7c3-dc67-434e-a4bc-77fdecf84b49.webp",
+  "bicep curl":          "https://wger.de/media/exercise-images/74/Bicep-curls-1.png",
 
   // Core
-  "plancha": "plank", "plank": "plank",
-  "abdominales": "crunch", "abdominal": "crunch",
-  "crunch": "crunch",
-  "elevación de piernas": "leg raise",
-  "russian twist": "russian twist",
-  "mountain climbers": "mountain climber",
-  "escaladores": "mountain climber",
+  "plank":               "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+  "crunch":              "https://wger.de/media/exercise-images/91/Crunches-1.png",
+  "mountain climber":    "https://wger.de/media/exercise-images/1091/50c8912d-54ef-46c9-99d1-633b6196aa1e.jpg",
+  "russian twist":       "https://wger.de/media/exercise-images/1193/70ca5d80-3847-4a8c-8882-c6e9e485e29e.png",
+  "leg raise":           "https://wger.de/media/exercise-images/125/Leg-raises-2.png",
 
-  // Cardio
-  "correr": "run", "carrera": "run",
-  "saltar la cuerda": "jump rope", "cuerda": "jump rope",
-  "burpees": "burpee", "burpee": "burpee",
-  "jumping jacks": "jumping jack",
-  "bicicleta estática": "stationary bike", "bicicleta": "stationary bike",
-  "elíptica": "elliptical",
-  "caminata": "walk",
-  "step": "step up",
-  "saltos": "jump",
-
-  // General
-  "press": "press",
-  "estiramiento": "stretch", "stretching": "stretch",
-  "foam roller": "foam roller",
-  "descanso": null,
+  // Cardio / full body
+  "run":                 "https://wger.de/media/exercise-images/1615/7792295c-83b6-4ea8-9353-ce02f0ad2559.jpg",
+  "burpee":              "https://wger.de/media/exercise-images/1556/a23c820b-e08b-4911-a6a4-80f16c15d2e0.png",
+  "jump rope":           "https://wger.de/media/exercise-images/1615/7792295c-83b6-4ea8-9353-ce02f0ad2559.jpg",
+  "step up":             "https://wger.de/media/exercise-images/984/5c7ffe68-e7b2-47f3-a22a-f9cc28640432.png",
 };
 
-function translateExercise(name) {
-  const lower = name.toLowerCase().trim();
-  if (TRANSLATIONS[lower] !== undefined) return TRANSLATIONS[lower];
-  // try first two words
-  const twoWords = lower.split(" ").slice(0, 2).join(" ");
-  if (TRANSLATIONS[twoWords] !== undefined) return TRANSLATIONS[twoWords];
-  // try first word
-  const firstWord = lower.split(" ")[0];
-  if (TRANSLATIONS[firstWord] !== undefined) return TRANSLATIONS[firstWord];
-  return lower;
-}
-
-async function searchExercise(query, apiKey) {
-  if (!query) return null;
-  const response = await fetch(
-    `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(query)}?limit=1`,
-    {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-      }
-    }
-  );
-  const data = await response.json();
-  return Array.isArray(data) && data[0]?.gifUrl ? data[0].gifUrl : null;
-}
-
-const FALLBACK_IMAGES = {
-  "squat": "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=200&h=200&fit=crop",
-  "push up": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&h=200&fit=crop",
-  "deadlift": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&h=200&fit=crop",
-  "run": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=200&h=200&fit=crop",
-  "default": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&h=200&fit=crop"
-};
-
-module.exports = async function handler(req, res) {
+module.exports = function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -97,43 +53,9 @@ module.exports = async function handler(req, res) {
   const { name } = req.query;
   if (!name) return res.status(400).json({ gifUrl: null, error: 'name required' });
 
-  const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) {
-    console.error('[get-exercise-image] RAPIDAPI_KEY not set');
-    return res.status(200).json({ gifUrl: FALLBACK_IMAGES.default });
-  }
+  const key = name.toLowerCase().trim();
+  const gifUrl = EXERCISE_IMAGES[key] || null;
 
-  const translated = translateExercise(name);
-  console.log('[get-exercise-image]', name, '->', translated);
-
-  if (translated === null) {
-    return res.status(200).json({ gifUrl: null });
-  }
-
-  try {
-    // Pass 1: full translated name
-    let gifUrl = await searchExercise(translated, apiKey);
-
-    // Pass 2: first word only
-    if (!gifUrl) {
-      const firstWord = translated.split(" ")[0];
-      if (firstWord !== translated) {
-        console.log('[get-exercise-image] retry with first word:', firstWord);
-        gifUrl = await searchExercise(firstWord, apiKey);
-      }
-    }
-
-    // Fallback: category-based static image
-    if (!gifUrl) {
-      console.log('[get-exercise-image] no result, using fallback for:', translated);
-      const fallbackKey = Object.keys(FALLBACK_IMAGES).find(k => translated.includes(k));
-      gifUrl = FALLBACK_IMAGES[fallbackKey] || FALLBACK_IMAGES.default;
-    }
-
-    console.log('[get-exercise-image]', name, '->', gifUrl ? 'found' : 'none');
-    return res.status(200).json({ gifUrl });
-  } catch (e) {
-    console.error('[get-exercise-image] error:', e.message);
-    return res.status(200).json({ gifUrl: FALLBACK_IMAGES.default });
-  }
+  console.log('[get-exercise-image]', key, '->', gifUrl ? 'found' : 'not in map');
+  return res.status(200).json({ gifUrl });
 };
