@@ -177,6 +177,7 @@ if (res.user?.id) {
     altura_cm: alturaCm ? Number(alturaCm) : null,
     objetivo
   });
+  // saveProfile uses upsert so no separate ensureProfile call needed
 }
 onRegister(selectedPlan, res.user);
 setLoading(false);
@@ -841,7 +842,7 @@ const handleGeneratePlan = async () => {
   let p = profile;
   if (!p?.edad && user?.id) p = await userService.getProfile(user.id);
   if (p && !profile) setProfile(p);
-  if (!p?.edad) { setEditProfileForm({ edad: "", pesoKg: "", alturaCm: "", objetivo: OBJETIVOS[0] }); setShowEditProfileModal(true); return; }
+  if (!p?.edad) return;
   setGeneratingPlan(true);
   try {
     const plan = await fetchAnthropicPlan({ edad: p.edad, peso_kg: p.peso_kg, altura_cm: p.altura_cm, objetivo: p.objetivo || OBJETIVOS[0] });
@@ -1031,9 +1032,19 @@ return (
 {profile?.objetivo && (
   <p style={{ color: theme.muted, fontSize: 12, margin: "-4px 0 12px" }}>Objetivo: <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span>{profile?.edad ? <span> · {profile.edad} años · {profile.peso_kg}kg · {profile.altura_cm}cm</span> : null}</p>
 )}
-<Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
-  {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
-</Btn>
+{profile?.edad ? (
+  <Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
+    {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
+  </Btn>
+) : (
+  <div style={{ background: theme.card, border: `1px dashed ${theme.gold}66`, borderRadius: 12, padding: "18px 16px", marginBottom: 14, textAlign: "center" }}>
+    <p style={{ fontSize: 24, margin: "0 0 8px" }}>📋</p>
+    <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 6px" }}>Completa tu perfil para generar tu plan</p>
+    <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 14px" }}>Necesitamos tu edad, peso, altura y objetivo de entrenamiento.</p>
+    <Btn onClick={() => { setEditProfileForm({ edad: profile?.edad || "", pesoKg: profile?.peso_kg || "", alturaCm: profile?.altura_cm || "", objetivo: profile?.objetivo || OBJETIVOS[0] }); setShowEditProfileModal(true); }}
+      style={{ padding: "10px 24px", fontSize: 13 }}>✏️ Completar perfil</Btn>
+  </div>
+)}
 {planIA ? (
   <div style={{ marginBottom: 16 }}>
     <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 16px", lineHeight: 1.6 }}>{planIA.resumen}</p>

@@ -163,10 +163,10 @@ export const userService = {
     return error ? { error: error.message } : { ok: true }
   },
   async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
-    console.log('[userService.saveProfile] updating:', { userId, plan, edad, peso_kg, altura_cm, objetivo })
+    console.log('[userService.saveProfile] upserting:', { userId, plan, edad, peso_kg, altura_cm, objetivo })
     const { error } = await supabase.from('usuarios')
-      .update({ plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() })
-      .eq('id', userId)
+      .upsert({ id: userId, plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() },
+               { onConflict: 'id' })
     if (error) console.error('[userService.saveProfile] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   },
