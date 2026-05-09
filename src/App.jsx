@@ -791,12 +791,22 @@ const [editProfileForm, setEditProfileForm] = useState({ edad: "", pesoKg: "", a
 const [editProfileLoading, setEditProfileLoading] = useState(false);
 
 useEffect(() => {
-  if (user?.id) {
-    userService.getPlan(user.id).then(setCurrentPlan);
-    userService.getProfile(user.id).then(p => {
-      if (p) { setProfile(p); if (p.plan_ia) setPlanIA(p.plan_ia); }
-    });
+  if (!user?.id) return;
+  userService.getPlan(user.id).then(setCurrentPlan);
+  // Show cached profile immediately while Supabase loads
+  const cached = db.get("redgym-profile");
+  if (cached && !Array.isArray(cached) && cached.edad) {
+    setProfile(cached);
+    if (cached.plan_ia) setPlanIA(cached.plan_ia);
   }
+  // Sync from Supabase and update cache
+  userService.getProfile(user.id).then(p => {
+    if (p) {
+      setProfile(p);
+      if (p.plan_ia) setPlanIA(p.plan_ia);
+      db.save("redgym-profile", p);
+    }
+  });
 }, [user?.id]);
 
 const plan = plans.find(p => p.id === currentPlan) || plans[0];
@@ -840,14 +850,27 @@ const fetchAnthropicPlan = async ({ edad, peso_kg, altura_cm, objetivo }) => {
 
 const handleGeneratePlan = async () => {
   let p = profile;
-  if (!p?.edad && user?.id) p = await userService.getProfile(user.id);
-  if (p && !profile) setProfile(p);
-  if (!p?.edad) return;
+  // 1. Try localStorage
+  if (!p?.edad) {
+    const cached = db.get("redgym-profile");
+    if (cached && !Array.isArray(cached) && cached.edad) { p = cached; setProfile(cached); }
+  }
+  // 2. Fall back to Supabase
+  if (!p?.edad && user?.id) {
+    const remote = await userService.getProfile(user.id);
+    if (remote) { p = remote; setProfile(remote); db.save("redgym-profile", remote); }
+  }
+  // 3. No profile data — show hint toast, do not open any form
+  if (!p?.edad) {
+    showToast("✏️ Edita tu perfil para personalizar el plan", theme.gold);
+    return;
+  }
   setGeneratingPlan(true);
   try {
     const plan = await fetchAnthropicPlan({ edad: p.edad, peso_kg: p.peso_kg, altura_cm: p.altura_cm, objetivo: p.objetivo || OBJETIVOS[0] });
     setPlanIA(plan);
     await userService.savePlanIA(user.id, plan);
+    db.save("redgym-profile", { ...p, plan_ia: plan });
     showToast("✅ Plan generado");
   } catch (e) {
     showToast("❌ " + e.message, "#ff4444");
@@ -864,18 +887,21 @@ const handleSaveEditProfile = async () => {
     altura_cm: editProfileForm.alturaCm ? Number(editProfileForm.alturaCm) : null,
     objetivo: editProfileForm.objetivo
   };
+  // Persist locally right away so generate can use it even if Supabase is slow
+  const newProfile = { ...(profile || {}), ...updated };
+  setProfile(newProfile);
+  db.save("redgym-profile", newProfile);
   const res = await userService.saveProfile(user.id, updated);
   setEditProfileLoading(false);
   if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
-  const newProfile = { ...(profile || {}), ...updated };
-  setProfile(newProfile);
   setShowEditProfileModal(false);
-  showToast("✅ Perfil actualizado — generando plan...", theme.gold);
+  showToast("✅ Perfil guardado — generando plan...", theme.gold);
   setGeneratingPlan(true);
   try {
     const plan = await fetchAnthropicPlan({ edad: updated.edad, peso_kg: updated.peso_kg, altura_cm: updated.altura_cm, objetivo: updated.objetivo });
     setPlanIA(plan);
     await userService.savePlanIA(user.id, plan);
+    db.save("redgym-profile", { ...newProfile, plan_ia: plan });
     showToast("✅ Plan generado");
   } catch (e) {
     showToast("❌ " + e.message, "#ff4444");
@@ -1024,27 +1050,24 @@ return (
 </div>
 ))}
 </Card>
-<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 12px" }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 8px" }}>
   <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: 0 }}>Mi Plan de Entrenamiento</p>
   <button onClick={() => { setEditProfileForm({ edad: profile?.edad || "", pesoKg: profile?.peso_kg || "", alturaCm: profile?.altura_cm || "", objetivo: profile?.objetivo || OBJETIVOS[0] }); setShowEditProfileModal(true); }}
     style={{ background: "none", border: `1px solid ${theme.cardBorder}`, borderRadius: 8, padding: "4px 10px", color: theme.muted, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>✏️ Editar perfil</button>
 </div>
-{profile?.objetivo && (
-  <p style={{ color: theme.muted, fontSize: 12, margin: "-4px 0 12px" }}>Objetivo: <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span>{profile?.edad ? <span> · {profile.edad} años · {profile.peso_kg}kg · {profile.altura_cm}cm</span> : null}</p>
-)}
 {profile?.edad ? (
-  <Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
-    {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
-  </Btn>
+  <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 12px" }}>
+    <span style={{ color: theme.gold, fontWeight: 700 }}>{profile.objetivo}</span>
+    {" · "}{profile.edad} años · {profile.peso_kg} kg · {profile.altura_cm} cm
+  </p>
 ) : (
-  <div style={{ background: theme.card, border: `1px dashed ${theme.gold}66`, borderRadius: 12, padding: "18px 16px", marginBottom: 14, textAlign: "center" }}>
-    <p style={{ fontSize: 24, margin: "0 0 8px" }}>📋</p>
-    <p style={{ color: theme.text, fontWeight: 700, fontSize: 13, margin: "0 0 6px" }}>Completa tu perfil para generar tu plan</p>
-    <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 14px" }}>Necesitamos tu edad, peso, altura y objetivo de entrenamiento.</p>
-    <Btn onClick={() => { setEditProfileForm({ edad: profile?.edad || "", pesoKg: profile?.peso_kg || "", alturaCm: profile?.altura_cm || "", objetivo: profile?.objetivo || OBJETIVOS[0] }); setShowEditProfileModal(true); }}
-      style={{ padding: "10px 24px", fontSize: 13 }}>✏️ Completar perfil</Btn>
-  </div>
+  <p style={{ color: theme.muted, fontSize: 12, margin: "0 0 12px" }}>
+    Edita tu perfil para personalizar tu plan de entrenamiento
+  </p>
 )}
+<Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
+  {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
+</Btn>
 {planIA ? (
   <div style={{ marginBottom: 16 }}>
     <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 16px", lineHeight: 1.6 }}>{planIA.resumen}</p>
