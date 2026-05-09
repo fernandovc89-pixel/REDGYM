@@ -747,9 +747,10 @@ return (
 
 const gifCache = {};
 
-function ExerciseImage({ name }) {
+function ExerciseImage({ name, label }) {
 const [gifUrl, setGifUrl] = useState(gifCache[name] !== undefined ? gifCache[name] : undefined);
 const [loading, setLoading] = useState(gifCache[name] === undefined);
+const [imgError, setImgError] = useState(false);
 useEffect(() => {
   if (gifCache[name] !== undefined) { setGifUrl(gifCache[name]); setLoading(false); return; }
   fetch(`/api/get-exercise-image?name=${encodeURIComponent(name)}`)
@@ -757,10 +758,15 @@ useEffect(() => {
     .then(d => { gifCache[name] = d.gifUrl || null; setGifUrl(d.gifUrl || null); setLoading(false); })
     .catch(() => { gifCache[name] = null; setLoading(false); });
 }, [name]);
-const box = { width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: theme.cardBorder, display: "flex", alignItems: "center", justifyContent: "center" };
-if (loading) return <div style={box}><span style={{ fontSize: 18, opacity: 0.4 }}>⏳</span></div>;
-if (!gifUrl) return <div style={box}><span style={{ fontSize: 22 }}>🏋️</span></div>;
-return <img src={gifUrl} alt={name} style={{ ...box, objectFit: "cover" }} />;
+const placeholder = { width: "100%", height: 160, background: theme.cardBorder, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 };
+if (loading) return <div style={placeholder}><span style={{ fontSize: 28, opacity: 0.4 }}>⏳</span></div>;
+if (!gifUrl || imgError) return (
+  <div style={placeholder}>
+    <span style={{ fontSize: 32 }}>🏋️</span>
+    <span style={{ color: theme.muted, fontSize: 10, textAlign: "center", padding: "0 8px", lineHeight: 1.3 }}>{label || name}</span>
+  </div>
+);
+return <img src={gifUrl} alt={label || name} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} onError={() => setImgError(true)} />;
 }
 
 function ProfileScreen({ onNavigate, onLogout, user }) {
@@ -1038,16 +1044,16 @@ return (
           <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.blue}>{d.enfoque}</Badge>
         </div>
         {d.enfoque !== "Descanso" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "8px 0 4px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "10px 0 4px" }}>
             {d.ejercicios?.map((e, j) => {
               const exName = typeof e === "string" ? e : e.name;
               const exLabel = typeof e === "string" ? e : e.label;
               return (
-                <div key={j} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <ExerciseImage name={exName} />
-                  <div>
-                    <p style={{ color: theme.text, fontSize: 12, fontWeight: 600, margin: 0 }}>{exLabel}</p>
-                    <p style={{ color: theme.muted, fontSize: 10, margin: "2px 0 0" }}>{exName}</p>
+                <div key={j} style={{ borderRadius: 10, overflow: "hidden", background: theme.card, border: `1px solid ${theme.cardBorder}` }}>
+                  <ExerciseImage name={exName} label={exLabel} />
+                  <div style={{ padding: "6px 8px 8px" }}>
+                    <p style={{ color: theme.text, fontSize: 11, fontWeight: 700, margin: 0, lineHeight: 1.3 }}>{exLabel}</p>
+                    <p style={{ color: theme.muted, fontSize: 9, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.3px" }}>{exName}</p>
                   </div>
                 </div>
               );
