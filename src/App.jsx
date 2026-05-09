@@ -1035,42 +1035,51 @@ return (
   {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
 </Btn>
 {planIA ? (
-  <Card style={{ marginBottom: 16 }}>
-    <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 14px", lineHeight: 1.6 }}>{planIA.resumen}</p>
+  <div style={{ marginBottom: 16 }}>
+    <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 16px", lineHeight: 1.6 }}>{planIA.resumen}</p>
     {planIA.dias?.map((d, i) => (
-      <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < planIA.dias.length - 1 ? `1px solid ${theme.cardBorder}` : "none" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <span style={{ color: theme.text, fontWeight: 700, fontSize: 12 }}>{d.dia}</span>
-          <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.blue}>{d.enfoque}</Badge>
+      <div key={i} style={{ marginBottom: 12, borderRadius: 14, overflow: "hidden", border: `1px solid ${theme.cardBorder}`, background: theme.card }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: d.enfoque === "Descanso" ? theme.bg : theme.accent + "18", borderBottom: `1px solid ${theme.cardBorder}` }}>
+          <div>
+            <p style={{ color: theme.muted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", margin: 0 }}>Día {i + 1}</p>
+            <p style={{ color: theme.text, fontWeight: 800, fontSize: 14, margin: "2px 0 0" }}>{d.dia}</p>
+          </div>
+          <Badge color={d.enfoque === "Descanso" ? theme.muted : theme.accent}>{d.enfoque}</Badge>
         </div>
-        {d.enfoque !== "Descanso" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "10px 0 4px" }}>
-            {d.ejercicios?.map((e, j) => {
-              const exName = typeof e === "string" ? e : e.name;
-              const exLabel = typeof e === "string" ? e : e.label;
-              return (
-                <div key={j} style={{ borderRadius: 10, overflow: "hidden", background: theme.card, border: `1px solid ${theme.cardBorder}` }}>
-                  <ExerciseImage name={exName} label={exLabel} />
-                  <div style={{ padding: "6px 8px 8px" }}>
-                    <p style={{ color: theme.text, fontSize: 11, fontWeight: 700, margin: 0, lineHeight: 1.3 }}>{exLabel}</p>
-                    <p style={{ color: theme.muted, fontSize: 9, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.3px" }}>{exName}</p>
+        {d.enfoque !== "Descanso" ? (
+          <div style={{ padding: "10px 10px 12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {d.ejercicios?.map((e, j) => {
+                const exName = typeof e === "string" ? e : e.name;
+                const exLabel = typeof e === "string" ? e : e.label;
+                return (
+                  <div key={j} style={{ borderRadius: 10, overflow: "hidden", background: theme.bg, border: `1px solid ${theme.cardBorder}` }}>
+                    <ExerciseImage name={exName} label={exLabel} />
+                    <div style={{ padding: "6px 8px 8px" }}>
+                      <p style={{ color: theme.text, fontSize: 11, fontWeight: 700, margin: 0, lineHeight: 1.3 }}>{exLabel}</p>
+                      <p style={{ color: theme.muted, fontSize: 9, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.3px" }}>{exName}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: "18px 14px", textAlign: "center" }}>
+            <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>💤 Descanso — recuperación activa y stretching</p>
           </div>
         )}
       </div>
     ))}
     {planIA.consejos?.length > 0 && (
-      <div style={{ marginTop: 12, padding: "12px", background: theme.bg, borderRadius: 10 }}>
-        <p style={{ color: theme.text, fontWeight: 700, fontSize: 12, margin: "0 0 8px" }}>Consejos</p>
+      <Card>
+        <p style={{ color: theme.text, fontWeight: 700, fontSize: 12, margin: "0 0 8px" }}>💡 Consejos</p>
         {planIA.consejos.map((c, i) => (
-          <p key={i} style={{ color: theme.muted, fontSize: 11, margin: "4px 0" }}>💡 {c}</p>
+          <p key={i} style={{ color: theme.muted, fontSize: 11, margin: "5px 0" }}>• {c}</p>
         ))}
-      </div>
+      </Card>
     )}
-  </Card>
+  </div>
 ) : (
   <Card style={{ marginBottom: 16, textAlign: "center", padding: "24px 20px", border: `1px dashed ${theme.cardBorder}` }}>
     <p style={{ fontSize: 32, margin: "0 0 8px" }}>🤖</p>
