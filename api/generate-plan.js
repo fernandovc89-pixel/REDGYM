@@ -9,9 +9,9 @@ module.exports = async function handler(req, res) {
   const { edad, peso_kg, altura_cm, objetivo } = req.body || {};
   console.log('[generate-plan] body:', { edad, peso_kg, altura_cm, objetivo });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error('[generate-plan] VITE_ANTHROPIC_KEY is not set');
+    console.error('[generate-plan] GROQ_API_KEY is not set');
     return res.status(500).json({ error: 'API key not configured on server' });
   }
 
@@ -20,26 +20,25 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    console.log('[generate-plan] calling Anthropic...');
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    console.log('[generate-plan] calling Groq...');
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'llama-3.1-8b-instant',
         max_tokens: 1500,
-        messages: [{
-          role: 'user',
-          content: `Eres un entrenador personal experto. Genera un plan de entrenamiento semanal personalizado en español para:
+        messages: [
+          { role: 'system', content: 'Eres un entrenador personal experto. Responde ÚNICAMENTE con JSON válido, sin texto adicional, sin markdown.' },
+          { role: 'user', content: `Genera un plan de entrenamiento semanal personalizado en español para:
 - Edad: ${edad} años
 - Peso: ${peso_kg} kg
 - Altura: ${altura_cm} cm
 - Objetivo: ${objetivo}
 
-Responde ÚNICAMENTE con JSON válido, sin texto adicional:
+Responde ÚNICAMENTE con este JSON:
 {
   "resumen": "descripción breve motivacional del plan (1-2 oraciones)",
   "dias": [
@@ -52,20 +51,20 @@ Responde ÚNICAMENTE con JSON válido, sin texto adicional:
     { "dia": "Domingo", "enfoque": "Descanso", "ejercicios": ["Descanso activo", "Stretching 15 min"] }
   ],
   "consejos": ["consejo 1", "consejo 2", "consejo 3"]
-}`
-        }]
+}` }
+        ]
       })
     });
 
-    console.log('[generate-plan] Anthropic status:', response.status);
+    console.log('[generate-plan] Groq status:', response.status);
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('[generate-plan] Anthropic error:', JSON.stringify(data));
-      throw new Error(data.error?.message || `Anthropic error ${response.status}`);
+      console.error('[generate-plan] Groq error:', JSON.stringify(data));
+      throw new Error(data.error?.message || `Groq error ${response.status}`);
     }
 
-    const raw = data.content[0].text;
+    const raw = data.choices[0].message.content;
     console.log('[generate-plan] raw response (first 200):', raw.slice(0, 200));
 
     // Strip markdown code fences if present
