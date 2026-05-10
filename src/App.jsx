@@ -785,6 +785,7 @@ const [planLoading, setPlanLoading] = useState(false);
 const [passLoading, setPassLoading] = useState(false);
 const [profile, setProfile] = useState(null);
 const [planIA, setPlanIA] = useState(null);
+const [showPlan, setShowPlan] = useState(false);
 const [generatingPlan, setGeneratingPlan] = useState(false);
 const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 const [editProfileForm, setEditProfileForm] = useState({ edad: "", pesoKg: "", alturaCm: "", objetivo: OBJETIVOS[0] });
@@ -866,6 +867,7 @@ const handleGeneratePlan = async () => {
     return;
   }
   setGeneratingPlan(true);
+  setShowPlan(true);
   try {
     const plan = await fetchAnthropicPlan({ edad: p.edad, peso_kg: p.peso_kg, altura_cm: p.altura_cm, objetivo: p.objetivo || OBJETIVOS[0] });
     setPlanIA(plan);
@@ -1065,10 +1067,18 @@ return (
     Edita tu perfil para personalizar tu plan de entrenamiento
   </p>
 )}
-<Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ width: "100%", padding: "13px", marginBottom: 14 }}>
-  {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
-</Btn>
-{planIA ? (
+<div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+  <Btn onClick={handleGeneratePlan} disabled={generatingPlan} style={{ flex: 1, padding: "13px" }}>
+    {generatingPlan ? "⏳ Generando plan..." : "🤖 Generar Plan con IA"}
+  </Btn>
+  {showPlan && (
+    <button onClick={() => setShowPlan(false)}
+      style={{ padding: "0 14px", background: "none", border: `1px solid ${theme.cardBorder}`, borderRadius: 10, color: theme.muted, fontSize: 12, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+      Ocultar
+    </button>
+  )}
+</div>
+{showPlan && planIA !== null ? (
   <div style={{ marginBottom: 16 }}>
     <p style={{ color: theme.gold, fontSize: 13, fontStyle: "italic", margin: "0 0 16px", lineHeight: 1.6 }}>{planIA.resumen}</p>
     {planIA.dias?.map((d, i) => (
@@ -1119,12 +1129,7 @@ return (
       </Card>
     )}
   </div>
-) : (
-  <Card style={{ marginBottom: 16, textAlign: "center", padding: "24px 20px", border: `1px dashed ${theme.cardBorder}` }}>
-    <p style={{ fontSize: 32, margin: "0 0 8px" }}>🤖</p>
-    <p style={{ color: theme.muted, fontSize: 13, margin: 0 }}>Genera tu plan personalizado con IA basado en tu perfil</p>
-  </Card>
-)}
+) : null}
 <button onClick={onLogout} style={{ width: "100%", padding: "14px", border: `1px solid ${theme.accent}44`, borderRadius: 10, background: "transparent", color: theme.accent, fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>Cerrar sesión</button>
 </div>
 <BottomNav active="profile" onNavigate={onNavigate} />
