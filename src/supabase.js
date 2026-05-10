@@ -143,11 +143,11 @@ export const visitService = {
 }
 
 export const userService = {
-  async ensureProfile(userId) {
+  async ensureProfile(userId, email) {
     const { data } = await supabase.from('usuarios').select('id').eq('id', userId).single()
-    if (data) return { ok: true } // row already exists
-    console.log('[userService.ensureProfile] no row found, inserting for', userId)
-    const { error } = await supabase.from('usuarios').insert({ id: userId, plan: 'estandar' })
+    if (data) return { ok: true }
+    console.log('[userService.ensureProfile] inserting for', userId)
+    const { error } = await supabase.from('usuarios').insert({ id: userId, email: email || '', plan: 'estandar' })
     if (error) console.error('[userService.ensureProfile] insert error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   },
@@ -162,10 +162,10 @@ export const userService = {
     if (error) console.error('[userService.updatePlan] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }
   },
-  async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo }) {
-    console.log('[userService.saveProfile] upserting:', { userId, plan, edad, peso_kg, altura_cm, objetivo })
+  async saveProfile(userId, { plan, edad, peso_kg, altura_cm, objetivo, email }) {
+    console.log('[userService.saveProfile] upserting:', { userId, email, plan, edad, peso_kg, altura_cm, objetivo })
     const { error } = await supabase.from('usuarios')
-      .upsert({ id: userId, plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() },
+      .upsert({ id: userId, email: email || '', plan, edad, peso_kg, altura_cm, objetivo, updated_at: new Date().toISOString() },
                { onConflict: 'id' })
     if (error) console.error('[userService.saveProfile] error:', error.message, error)
     return error ? { error: error.message } : { ok: true }

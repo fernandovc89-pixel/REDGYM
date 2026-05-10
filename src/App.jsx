@@ -171,13 +171,13 @@ const res = await authService.register(name, email, pass);
 if (res.error) { setError(res.error); setLoading(false); return; }
 if (res.user?.id) {
   await userService.saveProfile(res.user.id, {
+    email: res.user.email || email,
     plan: selectedPlan,
     edad: edad ? Number(edad) : null,
     peso_kg: pesoKg ? Number(pesoKg) : null,
     altura_cm: alturaCm ? Number(alturaCm) : null,
     objetivo
   });
-  // saveProfile uses upsert so no separate ensureProfile call needed
 }
 onRegister(selectedPlan, res.user);
 setLoading(false);
@@ -891,7 +891,7 @@ const handleSaveEditProfile = async () => {
   const newProfile = { ...(profile || {}), ...updated };
   setProfile(newProfile);
   db.save("redgym-profile", newProfile);
-  const res = await userService.saveProfile(user.id, updated);
+  const res = await userService.saveProfile(user.id, { ...updated, email: user.email || '' });
   setEditProfileLoading(false);
   if (res?.error) { showToast("❌ " + res.error, "#ff4444"); return; }
   setShowEditProfileModal(false);
@@ -1441,7 +1441,7 @@ return null;
 const handleLogin = (role, user) => {
 if (user) {
   setCurrentUser(user);
-  userService.ensureProfile(user.id);
+  userService.ensureProfile(user.id, user.email);
 }
 setScreen(role === "gym" ? "gym" : role === "admin" ? "admin" : "dashboard");
 };
@@ -1470,7 +1470,7 @@ setLoading(false);
 
 useEffect(() => {
 loadGyms();
-authService.getSession().then(user => { if (user) { setCurrentUser(user); userService.ensureProfile(user.id); } });
+authService.getSession().then(user => { if (user) { setCurrentUser(user); userService.ensureProfile(user.id, user.email); } });
 if (secretRole) setScreen(secretRole);
 }, []);
 return (
